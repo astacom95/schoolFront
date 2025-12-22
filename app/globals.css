@@ -1,0 +1,249 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --background: 0 0% 100%;
+  --foreground: 222.2 84% 4.9%;
+  --muted: 210 40% 96.1%;
+  --muted-foreground: 215.4 16.3% 46.9%;
+  --popover: 0 0% 100%;
+  --popover-foreground: 222.2 84% 4.9%;
+  --card: 0 0% 100%;
+  --card-foreground: 222.2 84% 4.9%;
+  --border: 214.3 31.8% 91.4%;
+  --input: 214.3 31.8% 91.4%;
+  --primary: 240 5.9% 10%;
+  --primary-foreground: 210 40% 98%;
+  --secondary: 210 40% 96.1%;
+  --secondary-foreground: 222.2 47.4% 11.2%;
+  --accent: 210 40% 96.1%;
+  --accent-foreground: 222.2 47.4% 11.2%;
+  --destructive: 0 72.2% 50.6%;
+  --destructive-foreground: 210 40% 98%;
+  --ring: 215 20.2% 65.1%;
+  --radius: 0.5rem;
+
+  /* Existing brand palette */
+  --color-primary: #8ca9ff;
+  --color-secondary: #fff2c6;
+  --color-highlight: #fff8de;
+  --color-accent: #aac4f5;
+  --color-surface: #ffffff;
+  --color-surface-alt: #f7f8ff;
+  --color-text: #0f172a;
+  --color-muted-text: #475569;
+  --color-sidebar-bg: #558999;
+  --color-sidebar-fg: #ffffff;
+
+  /* Sidebar defaults */
+  --sidebar-background: 189 29% 47%; /* matches --color-sidebar-bg */
+  --sidebar-foreground: 0 0% 100%;
+  --sidebar-primary: 227 33% 27%;
+  --sidebar-primary-foreground: 0 0% 100%;
+  --sidebar-accent: 227 33% 32%;
+  --sidebar-accent-foreground: 0 0% 100%;
+  --sidebar-border: 227 33% 35%;
+  --sidebar-ring: 227 33% 45%;
+
+  /* Layout */
+  --sidebar-width: 260px;
+}
+
+.dark {
+  --background: 240 10% 3.9%;
+  --foreground: 0 0% 98%;
+  --muted: 240 3.7% 15.9%;
+  --muted-foreground: 240 5% 64.9%;
+  --popover: 240 10% 3.9%;
+  --popover-foreground: 0 0% 98%;
+  --card: 240 10% 3.9%;
+  --card-foreground: 0 0% 98%;
+  --border: 240 3.7% 15.9%;
+  --input: 240 3.7% 15.9%;
+  --primary: 224.3 76.3% 48%;
+  --primary-foreground: 0 0% 100%;
+  --secondary: 240 3.7% 15.9%;
+  --secondary-foreground: 0 0% 98%;
+  --accent: 240 3.7% 15.9%;
+  --accent-foreground: 0 0% 98%;
+  --destructive: 0 62.8% 30.6%;
+  --destructive-foreground: 0 85.7% 97.3%;
+  --ring: 224.3 76.3% 48%;
+
+  --sidebar-background: 227 33% 22%;
+  --sidebar-foreground: 0 0% 100%;
+  --sidebar-primary: 227 33% 27%;
+  --sidebar-primary-foreground: 0 0% 100%;
+  --sidebar-accent: 227 33% 32%;
+  --sidebar-accent-foreground: 0 0% 100%;
+  --sidebar-border: 227 33% 28%;
+  --sidebar-ring: 227 33% 45%;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  font-family: "Cairo", "Noto Sans Arabic", "Segoe UI", sans-serif;
+  background: radial-gradient(circle at 20% 20%, rgba(140, 169, 255, 0.20), rgba(255, 255, 255, 0)),
+    linear-gradient(180deg, #fdfdfd 0%, #f5f8ff 100%);
+  color: var(--color-text);
+  direction: rtl;
+  text-align: right;
+}
+
+a {
+  color: inherit;
+  text-decoration: none;
+}
+
+input,
+select,
+textarea,
+button {
+  font: inherit;
+}
+
+.card {
+  background: var(--color-surface);
+  border: 1px solid rgba(15, 23, 42, 0.08);
+  border-radius: 18px;
+  padding: 16px;
+  box-shadow: 0 10px 35px rgba(15, 23, 42, 0.08);
+}
+
+.login-layout {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  align-items: center;
+}
+
+.login-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 12px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.85);
+  color: #c08401;
+  font-size: 13px;
+}
+
+/* Minimal styling fallback for shadcn sidebar (no Tailwind in this project) */
+[data-slot="sidebar-wrapper"] {
+  display: flex;
+  width: 100%;
+  min-height: 100vh;
+}
+
+[data-slot="sidebar"] {
+  flex: 0 0 var(--sidebar-width);
+  order: 2;
+}
+
+[data-slot="sidebar-container"] {
+  position: sticky;
+  inset: 0;
+  left: auto;
+  right: 0;
+  height: 100vh;
+  width: var(--sidebar-width);
+  background: var(--color-sidebar-bg);
+  color: var(--color-sidebar-fg);
+  border-left: 1px solid rgba(15, 23, 42, 0.08);
+  box-shadow: -12px 0 35px rgba(15, 23, 42, 0.05);
+}
+
+[data-slot="sidebar-inner"] {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  background: var(--color-sidebar-bg);
+  color: var(--color-sidebar-fg);
+}
+
+[data-slot="sidebar-header"],
+[data-slot="sidebar-footer"] {
+  padding: 14px 16px;
+}
+
+[data-slot="sidebar-content"] {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 8px;
+  overflow-y: auto;
+}
+
+[data-slot="sidebar-menu"] {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+[data-slot="sidebar-menu-button"] {
+  width: 100%;
+  border: 1px solid rgba(15, 23, 42, 0.05);
+  background: #fff;
+  border-radius: 12px;
+  padding: 10px 12px;
+  font-size: 14px;
+  cursor: pointer;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  color: #0f172a;
+}
+
+[data-slot="sidebar-menu-button"]:not([data-active="true"]):hover {
+  background: #ffffff;
+  color: #000000;
+}
+
+[data-slot="sidebar-menu-button"][data-active="true"] {
+  background: #ffffff;
+  color: #0f172a;
+  font-weight: 600;
+}
+
+[data-sidebar="menu-button"][data-active="true"] {
+  background: #ffffff;
+  color: #0f172a;
+  font-weight: 600;
+}
+
+[data-slot="sidebar-inset"] {
+  flex: 1;
+  min-height: 100vh;
+  order: 1;
+}
+
+[data-slot="sidebar-rail"] {
+  display: none;
+}
+
+.has-\[\[data-variant\=inset\]\]\:bg-sidebar:has([data-variant=inset]) {
+  background-color: var(--color-sidebar-bg);
+}
+
+
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+  body {
+    @apply bg-background text-foreground;
+  }
+}
