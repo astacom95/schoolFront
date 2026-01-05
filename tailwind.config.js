@@ -52,8 +52,8 @@ module.exports = {
           foreground: "hsl(var(--card-foreground))"
         },
         sidebar: {
-          DEFAULT: "hsl(var(--sidebar-background))",
-          foreground: "hsl(var(--sidebar-foreground))",
+          DEFAULT: "var(--color-sidebar-bg)",
+          foreground: "var(--color-sidebar-fg)",
           primary: "hsl(var(--sidebar-primary))",
           "primary-foreground": "hsl(var(--sidebar-primary-foreground))",
           accent: "hsl(var(--sidebar-accent))",

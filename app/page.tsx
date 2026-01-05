@@ -54,6 +54,10 @@ export default function HomePage() {
         body: JSON.stringify(payload)
       })) as LoginResponse;
 
+      if (response?.token) {
+        window.localStorage.setItem("authToken", response.token);
+      }
+
       const role = normalizeRole(response?.user?.role);
       if (!role) {
         throw new Error("تعذر تحديد الدور الخاص بك. تأكد من بيانات الدخول.");

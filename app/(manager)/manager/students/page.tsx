@@ -137,12 +137,6 @@ export default function ManagerStudentsPage() {
           )}
         </div>
       </SidebarInset>
-      <style jsx global>{`
-          [data-sidebar="sidebar"] {
-            background: var(--color-sidebar-bg);
-            color: var(--color-sidebar-fg);
-          }
-        `}</style>  
     </SidebarProvider>
   )
 }

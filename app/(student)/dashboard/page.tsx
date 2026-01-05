@@ -1,15 +1,25 @@
-import { cards } from "../../../lib/routes";
+import Link from "next/link"
+
+import { cards } from "../../../lib/routes"
 
 export default function StudentDashboard() {
   return (
     <div className="card">
-      <h2>áæÍÉ ÇáØÇáÈ</h2>
-      <p style={{ opacity: 0.8 }}>ÈæÇÈÉ æÇÍÏÉ áãÊÇÈÚÉ ÇáÌÏæá¡ ãÊÇÈÚÉ ÇáÏÑæÓ¡ ÇáãåÇã¡ æÇáÇÎÊÈÇÑÇÊ.</p>
+      <h2>Ù„ÙˆØ­Ø© Ø§Ù„Ø·Ø§Ù„Ø¨</h2>
+      <p style={{ opacity: 0.8 }}>Ø¨ÙˆØ§Ø¨Ø© ÙˆØ§Ø­Ø¯Ø© Ù„Ù…ØªØ§Ø¨Ø¹Ø© Ø§Ù„Ø¬Ø¯ÙˆÙ„ØŒ Ù…ØªØ§Ø¨Ø¹Ø© Ø§Ù„Ø¯Ø±ÙˆØ³ØŒ Ø§Ù„Ù…Ù‡Ø§Ù…ØŒ ÙˆØ§Ù„Ø§Ø®ØªØ¨Ø§Ø±Ø§Øª.</p>
       <ul>
         {cards.student.map((item) => (
-          <li key={item.title}>{item.title} - {item.description}</li>
+          <li key={item.title}>
+            {item.title} - {item.description}
+          </li>
         ))}
       </ul>
+      <Link
+        href="/student/lessons"
+        className="mt-4 inline-flex h-9 items-center justify-center rounded-lg bg-[var(--color-sidebar-bg)] px-4 text-sm font-medium text-white hover:opacity-90"
+      >
+        Ù…Ø´ØºÙ„ Ø§Ù„Ø¯Ø±ÙˆØ³
+      </Link>
     </div>
-  );
+  )
 }

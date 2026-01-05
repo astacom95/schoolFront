@@ -37,8 +37,10 @@
   --color-surface-alt: #f7f8ff;
   --color-text: #0f172a;
   --color-muted-text: #475569;
-  --color-sidebar-bg: #558999;
+  --color-sidebar-bg: #1d1e1f;
   --color-sidebar-fg: #ffffff;
+  /* #1d1e1f */
+  /* #558999 */
 
   /* Sidebar defaults */
   --sidebar-background: 189 29% 47%; /* matches --color-sidebar-bg */

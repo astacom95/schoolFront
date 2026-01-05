@@ -375,12 +375,6 @@ export default function TeacherTimetablePage() {
           </Card>
         </div>
       </SidebarInset>
-      <style jsx global>{`
-          [data-sidebar=\"sidebar\"] {
-            background: var(--color-sidebar-bg);
-            color: var(--color-sidebar-fg);
-          }
-        `}</style>
     </SidebarProvider>
   )
 }

@@ -1,6 +1,5 @@
 import { TrendingDownIcon, TrendingUpIcon } from "lucide-react"
 
-import { Badge } from "@/components/ui/badge"
 import {
   Card,
   CardDescription,
@@ -9,113 +8,101 @@ import {
   CardTitle,
 } from "@/components/ui/card"
 
-export function SectionCards() {
+type SectionCardItem = {
+  title: string
+  value: string
+  footerTitle?: string
+  footerNote?: string
+  trend?: "up" | "down" | "none"
+  imageSrc?: string
+  imageAlt?: string
+}
+
+const defaultItems: SectionCardItem[] = [
+  {
+    title: "الطلاب",
+    value: "86",
+    footerTitle: "نمو مستمر في التوظيف",
+    footerNote: "تمت إضافة 5 معلمين هذا الأسبوع",
+    trend: "up",
+    imageSrc: "/assets/graduation-cap-line.svg",
+    imageAlt: "الطلاب",
+  },
+  {
+    title: "الفصول",
+    value: "12",
+    footerTitle: "تسجيلات جديدة هذا الأسبوع",
+    footerNote: "التركيز على دمج الطلاب الجدد",
+    trend: "up",
+    imageSrc: "/assets/mdi_laptop-account.svg",
+    imageAlt: "الفصول",
+  },
+  {
+    title: "المواد",
+    value: "42",
+    footerTitle: "المحتوى الأكاديمي جاهز",
+    footerNote: "تمت مراجعة جميع الخطط",
+    trend: "none",
+    imageSrc: "/assets/Vector (1).svg",
+    imageAlt: "المواد",
+  },
+  {
+    title: "المعلمين",
+    value: "28",
+    footerTitle: "متابعة يومية للجودة",
+    footerNote: "6 معلمين تمت مراجعتهم اليوم",
+    trend: "down",
+    imageSrc: "/assets/Vector (2).svg",
+    imageAlt: "المعلمين",
+  },
+  {
+    title: "الحضور والغياب",
+    value: "28",
+    footerTitle: "متابعة يومية للطلاب",
+    footerNote: "اخر مراجعة يوم",
+    trend: "down",
+    imageSrc: "/assets/Vector.svg",
+    imageAlt: "الحضور والغياب",
+  },
+]
+
+export function SectionCards({ items = defaultItems }: { items?: SectionCardItem[] }) {
   return (
     <div className="grid grid-flow-col auto-cols-[minmax(220px,1fr)] gap-4 px-4 lg:px-6 overflow-x-auto">
-      <Card className="@container/card bg-[var(--color-sidebar-bg)] text-white border-none shadow-sm">
-        <CardHeader className="relative">
-          <img
-            src="/assets/graduation-cap-line.svg"
-            alt="الطلاب"
-            className="absolute left-10 top-4 h-35 w-35 opacity-80"
-          />
-          <CardDescription className="text-white/90"> الطلاب</CardDescription>
-          <CardTitle className="@[250px]/card:text-3xl text-2xl font-semibold tabular-nums">
-            86
-          </CardTitle>
-        
-        </CardHeader>
-        <CardFooter className="flex-col items-start gap-1 text-sm">
-          <div className="line-clamp-1 flex gap-2 font-medium">
-            نمو مستمر في التوظيف <TrendingUpIcon className="size-4" />
-          </div>
-          <div className="text-white/80">
-            تمت إضافة 5 معلمين هذا الأسبوع
-          </div>
-        </CardFooter>
-      </Card>
-      <Card className="@container/card bg-[var(--color-sidebar-bg)] text-white border-none shadow-sm">
-        <CardHeader className="relative">
-           <img
-            src="/assets/mdi_laptop-account.svg"
-            alt="الطلاب"
-            className="absolute left-10 top-4 h-35 w-35 opacity-80"
-          />
-          <CardDescription className="text-white/90">الفصول</CardDescription>
-          <CardTitle className="@[250px]/card:text-3xl text-2xl font-semibold tabular-nums">
-            12
-          </CardTitle>
-        
-        </CardHeader>
-        <CardFooter className="flex-col items-start gap-1 text-sm">
-          <div className="line-clamp-1 flex gap-2 font-medium">
-            تسجيلات جديدة هذا الأسبوع <TrendingUpIcon className="size-4" />
-          </div>
-          <div className="text-white/80">
-            التركيز على دمج الطلاب الجدد
-          </div>
-        </CardFooter>
-      </Card>
-      <Card className="@container/card bg-[var(--color-sidebar-bg)] text-white border-none shadow-sm">
-        <CardHeader className="relative">
-          <img
-            src="/assets/Vector (1).svg"
-            alt="الطلاب"
-            className="absolute left-10 top-4 h-35 w-35 opacity-80"
-          />
-          <CardDescription className="text-white/90">المواد</CardDescription>
-          <CardTitle className="@[250px]/card:text-3xl text-2xl font-semibold tabular-nums">
-            42
-          </CardTitle>
-        
-        </CardHeader>
-        <CardFooter className="flex-col items-start gap-1 text-sm">
-          <div className="line-clamp-1 flex gap-2 font-medium">
-            المحتوى الأكاديمي جاهز 
-          </div>
-          <div className="text-white/80">تمت مراجعة جميع الخطط</div>
-        </CardFooter>
-      </Card>
-      <Card className="@container/card bg-[var(--color-sidebar-bg)] text-white border-none shadow-sm">
-        <CardHeader className="relative">
-          <img
-            src="/assets/Vector (2).svg"
-            alt="الطلاب"
-            className="absolute left-10 top-4 h-35 w-35 opacity-80"
-          />
-          <CardDescription className="text-white/90"> المعلمين</CardDescription>
-          <CardTitle className="@[250px]/card:text-3xl text-2xl font-semibold tabular-nums">
-            28
-          </CardTitle>
-      
-        </CardHeader>
-        <CardFooter className="flex-col items-start gap-1 text-sm">
-          <div className="line-clamp-1 flex gap-2 font-medium">
-            متابعة يومية للجودة <TrendingDownIcon className="size-4" />
-          </div>
-          <div className="text-white/80">6 معلمين تمت مراجعتهم اليوم</div>
-        </CardFooter>
-      </Card>
-        <Card className="@container/card bg-[var(--color-sidebar-bg)] text-white border-none shadow-sm">
-        <CardHeader className="relative">
-          <img
-            src="/assets/Vector.svg"
-            alt="الطلاب"
-            className="absolute left-10 top-4 h-35 w-35 opacity-80"
-          />
-          <CardDescription className="text-white/90"> الحضور والغياب</CardDescription>
-          <CardTitle className="@[250px]/card:text-3xl text-2xl font-semibold tabular-nums">
-            28
-          </CardTitle>
-      
-        </CardHeader>
-        <CardFooter className="flex-col items-start gap-1 text-sm">
-          <div className="line-clamp-1 flex gap-2 font-medium">
-            متابعة يومية للطلاب <TrendingDownIcon className="size-4" />
-          </div>
-          <div className="text-white/80"> اخر مراجعة يوم </div>
-        </CardFooter>
-      </Card>
+      {items.map((item) => (
+        <Card
+          key={item.title}
+          className="@container/card bg-[var(--color-sidebar-bg)] text-white border-none shadow-sm"
+        >
+          <CardHeader className="relative">
+            {item.imageSrc ? (
+              <img
+                src={item.imageSrc}
+                alt={item.imageAlt ?? item.title}
+                className="absolute left-10 top-4 h-35 w-35 opacity-80"
+              />
+            ) : null}
+            <CardDescription className="text-white/90">{item.title}</CardDescription>
+            <CardTitle className="@[250px]/card:text-3xl text-2xl font-semibold tabular-nums">
+              {item.value}
+            </CardTitle>
+          </CardHeader>
+          {(item.footerTitle || item.footerNote) && (
+            <CardFooter className="flex-col items-start gap-1 text-sm">
+              {item.footerTitle ? (
+                <div className="line-clamp-1 flex gap-2 font-medium">
+                  {item.footerTitle}
+                  {item.trend === "up" && <TrendingUpIcon className="size-4" />}
+                  {item.trend === "down" && <TrendingDownIcon className="size-4" />}
+                </div>
+              ) : null}
+              {item.footerNote ? (
+                <div className="text-white/80">{item.footerNote}</div>
+              ) : null}
+            </CardFooter>
+          )}
+        </Card>
+      ))}
     </div>
   )
 }
