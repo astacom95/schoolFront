@@ -1,12 +1,57 @@
- "use client";
-import { useEffect, useState } from "react";
+"use client"
+import { useEffect, useState } from "react"
 
-import { AppSidebar } from "@/components/app-sidebar";
 import { ChartAreaInteractive } from "@/components/chart-area-interactive"
 import { DataTable } from "@/components/data-table"
 import { SectionCards } from "@/components/section-cards"
-import { SiteHeader } from "@/components/site-header"
-import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar"
+
+const managerCards = [
+  {
+    title: "الطلاب",
+    value: "0",
+    footerTitle: "متابعة حضور الطلاب",
+    footerNote: "اخر تحديث اليوم",
+    trend: "none" as const,
+    imageSrc: "/assets/graduation-cap-line.svg",
+    imageAlt: "الطلاب",
+  },
+  {
+    title: "المعلمين",
+    value: "0",
+    footerTitle: "توزيع المعلمين على الفصول",
+    footerNote: "جاهز للمراجعة",
+    trend: "up" as const,
+    imageSrc: "/assets/mdi_laptop-account.svg",
+    imageAlt: "المعلمين",
+  },
+  {
+    title: "المواد",
+    value: "0",
+    footerTitle: "المحتوى الأكاديمي",
+    footerNote: "قيد المراجعة",
+    trend: "none" as const,
+    imageSrc: "/assets/Vector (1).svg",
+    imageAlt: "المواد",
+  },
+  {
+    title: "المستويات",
+    value: "0",
+    footerTitle: "إدارة الهيكل الدراسي",
+    footerNote: "محدث باستمرار",
+    trend: "down" as const,
+    imageSrc: "/assets/Vector (2).svg",
+    imageAlt: "المستويات",
+  },
+  {
+    title: "الرسوم",
+    value: "0",
+    footerTitle: "متابعة الرسوم والمدفوعات",
+    footerNote: "آخر مراجعة اليوم",
+    trend: "down" as const,
+    imageSrc: "/assets/Vector.svg",
+    imageAlt: "الرسوم",
+  },
+]
 
 export default function ManagerDashboard() {
   const [students, setStudents] = useState<any[]>([])
@@ -37,22 +82,16 @@ export default function ManagerDashboard() {
   }, [])
 
   return (
-    <SidebarProvider>
-      <AppSidebar side="right" variant="inset" />
-      <SidebarInset className="bg-white text-[var(--color-text)]">
-        <SiteHeader />
-            <div className="flex flex-1 flex-col">
-              <div className="@container/main flex flex-1 flex-col gap-2">
-                <div className="flex flex-col gap-4 py-4 md:gap-6 md:py-6">
-                  <SectionCards />
-                  <div className="px-4 lg:px-6">
-                    <ChartAreaInteractive />
-                  </div>
-                  <DataTable data={students} />
-                </div>
-              </div>
-            </div>
-          </SidebarInset>
-      </SidebarProvider>
+    <div className="flex flex-1 flex-col">
+      <div className="@container/main flex flex-1 flex-col gap-2">
+        <div className="flex flex-col gap-4 py-4 md:gap-6 md:py-6">
+          <SectionCards items={managerCards} />
+          <div className="px-4 lg:px-6">
+            <ChartAreaInteractive />
+          </div>
+          <DataTable data={students} />
+        </div>
+      </div>
+    </div>
   )
 }

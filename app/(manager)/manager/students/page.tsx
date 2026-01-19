@@ -3,10 +3,7 @@
 import Link from "next/link"
 import { ReactNode, useEffect, useMemo, useState } from "react"
 
-import { AppSidebar } from "@/components/app-sidebar"
 import { DataTable, type StudentRow } from "@/components/data-table"
-import { SiteHeader } from "@/components/site-header"
-import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar"
 
 const PAGE_SIZE = 10
 
@@ -56,25 +53,21 @@ export default function ManagerStudentsPage() {
   }, [apiRoot])
 
   return (
-    <SidebarProvider>
-      <AppSidebar side="right" variant="inset" />
-      <SidebarInset className="bg-white text-[var(--color-text)]">
-        <SiteHeader />
-        <div className="flex flex-1 flex-col px-4 lg:px-6 py-4 md:py-6 gap-6">
-          <div className="flex items-center justify-between flex-wrap gap-3">
-            <div className="flex items-center gap-2">
-              <h2 className="text-xl font-semibold">الطلاب</h2>
-              <span className="text-sm text-muted-foreground">عرض وإدارة الطلاب</span>
-            </div>
-            <div className="flex items-center gap-2">
-              <Link
-                href="/manager/students/add"
-                className="inline-flex h-10 items-center rounded-md bg-[var(--color-sidebar-bg)] px-4 text-sm font-medium text-white hover:opacity-90"
-              >
-                إضافة طالب
-              </Link>
-            </div>
-          </div>
+    <div className="flex flex-1 flex-col px-4 lg:px-6 py-4 md:py-6 gap-6">
+      <div className="flex items-center justify-between flex-wrap gap-3">
+        <div className="flex items-center gap-2">
+          <h2 className="text-xl font-semibold">الطلاب</h2>
+          <span className="text-sm text-muted-foreground">عرض وإدارة الطلاب</span>
+        </div>
+        <div className="flex items-center gap-2">
+          <Link
+            href="/manager/students/add"
+            className="inline-flex h-10 items-center rounded-md bg-[var(--color-sidebar-bg)] px-4 text-sm font-medium text-white hover:opacity-90"
+          >
+            إضافة طالب
+          </Link>
+        </div>
+      </div>
 
           <div className="w-full">
             <DataTable
@@ -86,58 +79,56 @@ export default function ManagerStudentsPage() {
               onSelectRow={setSelectedStudent}
             />
           </div>
-          {selectedStudent && (
-            <div className="grid gap-4">
-              <div className="flex items-start">
-                <AvatarTile src={selectedStudent.personal_image_path} name={selectedStudent.full_name} baseUrl={apiBase} />
-              </div>
-              <div className="grid gap-4 md:grid-cols-3">
-                <InfoTile title="الاسم الكامل" value={selectedStudent.full_name} />
-                <InfoTile title="البريد الإلكتروني" value={selectedStudent.email || "—"} />
-                <InfoTile title="رقم الهاتف" value={selectedStudent.phone_number || "—"} />
-                <InfoTile title="المستوى" value={selectedStudent.level || "—"} />
-                <InfoTile title="الفصل" value={selectedStudent.class || "—"} />
-                <InfoTile title="الجنس" value={selectedStudent.gender || "—"} />
-                <InfoTile title="ولي الأمر" value={selectedStudent.guardian_name || "—"} />
-                <InfoTile title="تاريخ الميلاد" value={selectedStudent.date_of_birth || "—"} />
-                <InfoTile title="تاريخ التسجيل" value={selectedStudent.created_at || "—"} />
-                <InfoTile title="الدولة" value={selectedStudent.country || "—"} />
-                <InfoTile title="الولاية / المنطقة" value={selectedStudent.state || "—"} />
-                <InfoTile title="المدينة" value={selectedStudent.city || "—"} />
-                <InfoTile
-                  title="الوثائق الرسمية"
-                  value={
-                    selectedStudent.certificate_path ? (
-                      <a
-                        href={resolveStorageUrl(selectedStudent.certificate_path, apiBase)}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="underline text-black"
-                      >
-                        عرض الوثيقة
-                      </a>
-                    ) : (
-                      "لا توجد وثائق"
-                    )
-                  }
-                  className="md:col-span-3"
-                />
-                <InfoTile
-                  title="ملاحظات"
-                  value="لا توجد ملاحظات مضافة"
-                  className="md:col-span-2"
-                />
-                <InfoTile
-                  title="ملف الطالب"
-                  value="يظهر هنا أي محتوى أو معلومات إضافية للطالب المختار."
-                  className="md:col-span-3 h-32"
-                />
-              </div>
-            </div>
-          )}
+      {selectedStudent && (
+        <div className="grid gap-4">
+          <div className="flex items-start">
+            <AvatarTile src={selectedStudent.personal_image_path} name={selectedStudent.full_name} baseUrl={apiBase} />
+          </div>
+          <div className="grid gap-4 md:grid-cols-3">
+            <InfoTile title="الاسم الكامل" value={selectedStudent.full_name} />
+            <InfoTile title="البريد الإلكتروني" value={selectedStudent.email || "—"} />
+            <InfoTile title="رقم الهاتف" value={selectedStudent.phone_number || "—"} />
+            <InfoTile title="المستوى" value={selectedStudent.level || "—"} />
+            <InfoTile title="الفصل" value={selectedStudent.class || "—"} />
+            <InfoTile title="الجنس" value={selectedStudent.gender || "—"} />
+            <InfoTile title="ولي الأمر" value={selectedStudent.guardian_name || "—"} />
+            <InfoTile title="تاريخ الميلاد" value={selectedStudent.date_of_birth || "—"} />
+            <InfoTile title="تاريخ التسجيل" value={selectedStudent.created_at || "—"} />
+            <InfoTile title="الدولة" value={selectedStudent.country || "—"} />
+            <InfoTile title="الولاية / المنطقة" value={selectedStudent.state || "—"} />
+            <InfoTile title="المدينة" value={selectedStudent.city || "—"} />
+            <InfoTile
+              title="الوثائق الرسمية"
+              value={
+                selectedStudent.certificate_path ? (
+                  <a
+                    href={resolveStorageUrl(selectedStudent.certificate_path, apiBase)}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="underline text-black"
+                  >
+                    عرض الوثيقة
+                  </a>
+                ) : (
+                  "لا توجد وثائق"
+                )
+              }
+              className="md:col-span-3"
+            />
+            <InfoTile
+              title="ملاحظات"
+              value="لا توجد ملاحظات مضافة"
+              className="md:col-span-2"
+            />
+            <InfoTile
+              title="ملف الطالب"
+              value="يظهر هنا أي محتوى أو معلومات إضافية للطالب المختار."
+              className="md:col-span-3 h-32"
+            />
+          </div>
         </div>
-      </SidebarInset>
-    </SidebarProvider>
+      )}
+    </div>
   )
 }
 

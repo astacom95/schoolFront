@@ -3,12 +3,9 @@
 import { useEffect, useMemo, useState } from "react"
 import { useRouter } from "next/navigation"
 
-import { AppSidebar } from "@/components/app-sidebar"
-import { SiteHeader } from "@/components/site-header"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar"
 
 type LevelOption = {
   id: number
@@ -196,23 +193,19 @@ export default function AddStudentPage() {
   }
 
   return (
-    <SidebarProvider>
-      <AppSidebar side="right" variant="inset" />
-      <SidebarInset className="bg-white text-[var(--color-text)]">
-        <SiteHeader />
-        <div className="flex flex-1 flex-col px-4 lg:px-6 py-4 md:py-6 gap-6">
-          <div className="flex items-center justify-between flex-wrap gap-2">
-            <div>
-              <h2 className="text-xl font-semibold">إضافة طالب</h2>
-              <p className="text-sm text-muted-foreground">أدخل بيانات الطالب واربطها بالرسوم المطلوبة.</p>
-            </div>
-            {currentFee && (
-              <div className="text-sm text-black bg-[#c5dfe3] px-3 py-2 rounded-lg shadow-sm">
-                <div>إجمالي الرسوم: {currentFee.total_fee}</div>
-                <div>الحد الأدنى: {currentFee.minimum_fee}</div>
-              </div>
-            )}
+    <div className="flex flex-1 flex-col px-4 lg:px-6 py-4 md:py-6 gap-6">
+      <div className="flex items-center justify-between flex-wrap gap-2">
+        <div>
+          <h2 className="text-xl font-semibold">إضافة طالب</h2>
+          <p className="text-sm text-muted-foreground">أدخل بيانات الطالب واربطها بالرسوم المطلوبة.</p>
+        </div>
+        {currentFee && (
+          <div className="text-sm text-black bg-[#c5dfe3] px-3 py-2 rounded-lg shadow-sm">
+            <div>إجمالي الرسوم: {currentFee.total_fee}</div>
+            <div>الحد الأدنى: {currentFee.minimum_fee}</div>
           </div>
+        )}
+      </div>
 
           <form onSubmit={handleSubmit} className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm space-y-4">
             <div className="grid gap-3 md:grid-cols-3">
@@ -369,8 +362,6 @@ export default function AddStudentPage() {
               </Button>
             </div>
           </form>
-        </div>
-      </SidebarInset>
-    </SidebarProvider>
+    </div>
   )
 }

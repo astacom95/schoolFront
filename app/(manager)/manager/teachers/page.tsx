@@ -3,10 +3,7 @@
 import Link from "next/link"
 import { ReactNode, useEffect, useMemo, useState } from "react"
 
-import { AppSidebar } from "@/components/app-sidebar"
 import { DataTable, type StudentRow } from "@/components/data-table"
-import { SiteHeader } from "@/components/site-header"
-import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar"
 
 const PAGE_SIZE = 10
 
@@ -51,25 +48,21 @@ export default function ManagerTeachersPage() {
   }, [apiRoot])
 
   return (
-    <SidebarProvider>
-      <AppSidebar side="right" variant="inset" />
-      <SidebarInset className="bg-white text-[var(--color-text)]">
-        <SiteHeader />
-        <div className="flex flex-1 flex-col px-4 lg:px-6 py-4 md:py-6 gap-6">
-          <div className="flex items-center justify-between flex-wrap gap-3">
-            <div className="flex items-center gap-2">
-              <h2 className="text-xl font-semibold">المعلمين</h2>
-              <span className="text-sm text-muted-foreground">عرض وإدارة المعلمين</span>
-            </div>
-            <div className="flex items-center gap-2">
-              <Link
-                href="/manager/teachers/add"
-                className="inline-flex h-10 items-center rounded-md bg-[var(--color-sidebar-bg)] px-4 text-sm font-medium text-white hover:opacity-90"
-              >
-                إضافة معلم
-              </Link>
-            </div>
-          </div>
+    <div className="flex flex-1 flex-col px-4 lg:px-6 py-4 md:py-6 gap-6">
+      <div className="flex items-center justify-between flex-wrap gap-3">
+        <div className="flex items-center gap-2">
+          <h2 className="text-xl font-semibold">المعلمين</h2>
+          <span className="text-sm text-muted-foreground">عرض وإدارة المعلمين</span>
+        </div>
+        <div className="flex items-center gap-2">
+          <Link
+            href="/manager/teachers/add"
+            className="inline-flex h-10 items-center rounded-md bg-[var(--color-sidebar-bg)] px-4 text-sm font-medium text-white hover:opacity-90"
+          >
+            إضافة معلم
+          </Link>
+        </div>
+      </div>
 
           <div className="w-full">
             <DataTable
@@ -137,9 +130,7 @@ export default function ManagerTeachersPage() {
               </div>
             </div>
           )}
-        </div>
-      </SidebarInset>
-    </SidebarProvider>
+    </div>
   )
 }
 

@@ -3,10 +3,7 @@
 import { useMemo } from "react"
 import { useSearchParams } from "next/navigation"
 
-import { AppSidebar } from "@/components/app-sidebar"
-import { SiteHeader } from "@/components/site-header"
 import { Button } from "@/components/ui/button"
-import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar"
 
 const statusCopy: Record<string, string> = {
   connected: "تم ربط يوتيوب بنجاح.",
@@ -31,18 +28,14 @@ export default function YouTubeConnectorPage() {
   }
 
   return (
-    <SidebarProvider>
-      <AppSidebar side="right" variant="inset" />
-      <SidebarInset className="bg-white text-[var(--color-text)]">
-        <SiteHeader />
-        <div className="flex flex-1 flex-col">
-          <div className="@container/main flex flex-1 flex-col gap-4 px-4 py-6 lg:px-6">
-            <div>
-              <h1 className="text-2xl font-semibold text-[var(--color-text)]">موصل يوتيوب</h1>
-              <p className="mt-2 text-sm text-slate-600">
-                اربط قناة المدرسة على يوتيوب لتمكين البث المباشر تلقائيا.
-              </p>
-            </div>
+    <div className="flex flex-1 flex-col">
+      <div className="@container/main flex flex-1 flex-col gap-4 px-4 py-6 lg:px-6">
+        <div>
+          <h1 className="text-2xl font-semibold text-[var(--color-text)]">موصل يوتيوب</h1>
+          <p className="mt-2 text-sm text-slate-600">
+            اربط قناة المدرسة على يوتيوب لتمكين البث المباشر تلقائيا.
+          </p>
+        </div>
             {statusMessage ? (
               <div className="rounded-lg border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-700">
                 {statusMessage}
@@ -65,9 +58,7 @@ export default function YouTubeConnectorPage() {
                 </Button>
               </div>
             </div>
-          </div>
-        </div>
-      </SidebarInset>
-    </SidebarProvider>
+      </div>
+    </div>
   )
 }

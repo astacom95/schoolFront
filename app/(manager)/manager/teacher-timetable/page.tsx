@@ -2,14 +2,11 @@
 
 import { useEffect, useMemo, useState } from "react"
 
-import { AppSidebar } from "@/components/app-sidebar"
 import { Button } from "@/components/ui/button"
 import { Card } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar"
-import { SiteHeader } from "@/components/site-header"
 
 type LevelWithClasses = {
   id: number
@@ -202,17 +199,13 @@ export default function TeacherTimetablePage() {
   }
 
   return (
-    <SidebarProvider>
-      <AppSidebar side="right" variant="inset" />
-      <SidebarInset className="bg-white text-[var(--color-text)]">
-        <SiteHeader />
-        <div className="flex flex-col gap-6 px-4 lg:px-6 py-4 md:py-6">
-          <div className="flex items-center justify-between flex-wrap gap-3">
-            <div className="flex flex-col">
-              <h2 className="text-xl font-semibold">جدول المعلمين</h2>
-              <span className="text-sm text-muted-foreground">إضافة وتحقق التعارضات للفصول والمعلمين</span>
-            </div>
-          </div>
+    <div className="flex flex-col gap-6 px-4 lg:px-6 py-4 md:py-6">
+      <div className="flex items-center justify-between flex-wrap gap-3">
+        <div className="flex flex-col">
+          <h2 className="text-xl font-semibold">جدول المعلمين</h2>
+          <span className="text-sm text-muted-foreground">إضافة وتحقق التعارضات للفصول والمعلمين</span>
+        </div>
+      </div>
 
           <Card className="p-4 shadow-sm border border-slate-200">
             <form className="grid gap-4" onSubmit={handleSubmit}>
@@ -373,8 +366,6 @@ export default function TeacherTimetablePage() {
               ))}
             </div>
           </Card>
-        </div>
-      </SidebarInset>
-    </SidebarProvider>
+    </div>
   )
 }

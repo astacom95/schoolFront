@@ -2,11 +2,9 @@
 
 import { useEffect, useState } from "react"
 
-import { AppSidebar } from "@/components/app-sidebar"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar"
 
 type ClassPayload = {
   id: string
@@ -125,16 +123,13 @@ export default function LevelsPage() {
   }
 
   return (
-    <SidebarProvider>
-      <AppSidebar side="right" variant="inset" />
-      <SidebarInset className="bg-white text-[var(--color-text)]">
-        <div className="flex flex-col gap-6 px-4 py-6 lg:px-6">
-          <div>
-            <h1 className="text-2xl font-bold">المستويات</h1>
-            <p className="text-sm text-muted-foreground mt-1">
-              أضف مستوى جديداً والفصول التابعة له.
-            </p>
-          </div>
+    <div className="flex flex-col gap-6 px-4 py-6 lg:px-6">
+      <div>
+        <h1 className="text-2xl font-bold">المستويات</h1>
+        <p className="text-sm text-muted-foreground mt-1">
+          أضف مستوى جديداً والفصول التابعة له.
+        </p>
+      </div>
 
           <form onSubmit={handleSubmit} className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm space-y-4">
             <div className="grid gap-4 md:grid-cols-3">
@@ -251,8 +246,6 @@ export default function LevelsPage() {
               </div>
             </div>
           )}
-        </div>
-      </SidebarInset>
-    </SidebarProvider>
+    </div>
   )
 }
