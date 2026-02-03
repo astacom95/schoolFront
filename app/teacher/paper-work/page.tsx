@@ -68,6 +68,11 @@ const teacherNav = [
     icon: ClipboardListIcon,
   },
   {
+    title: "الاختبارات الشهرية",
+    url: "/teacher/monthly-tests",
+    icon: FileTextIcon,
+  },
+  {
     title: "أوراق العمل",
     url: "/teacher/paper-work",
     icon: FileTextIcon,
@@ -251,66 +256,96 @@ export default function TeacherPaperWorkPage() {
           <div className="@container/main flex flex-1 flex-col gap-2">
             <div className="flex flex-col gap-4 py-4 md:gap-6 md:py-6">
               <div className="px-4 lg:px-6">
-                <div className="mb-4 flex flex-wrap items-center gap-2">
-                  <select
-                    className="h-9 rounded-lg bg-[var(--color-sidebar-bg)] text-white px-3 text-sm  outline-none"
-                    value={levelId}
-                    onChange={(event) => handleLevelChange(event.target.value ? Number(event.target.value) : "")}
-                    aria-label="اختر المرحلة"
-                  >
-                    <option value="">المرحلة</option>
-                    {levels.map((level) => (
-                      <option key={level.id} value={level.id}>
-                        {level.name}
-                      </option>
-                    ))}
-                  </select>
-                  <select
-                    className="h-9 rounded-lg bg-[var(--color-sidebar-bg)] px-3 text-sm text-white outline-none"
-                    value={classId}
-                    onChange={(event) => handleClassChange(event.target.value ? Number(event.target.value) : "")}
-                    aria-label="اختر الصف"
-                  >
-                    <option value="">الصف</option>
-                    {classes.map((schoolClass) => (
-                      <option key={schoolClass.id} value={schoolClass.id}>
-                        {schoolClass.name}
-                      </option>
-                    ))}
-                  </select>
-                  <select
-                    className="h-9 rounded-lg bg-[var(--color-sidebar-bg)] px-3 text-sm text-white outline-none"
-                    value={subjectId}
-                    onChange={(event) => setSubjectId(event.target.value ? Number(event.target.value) : "")}
-                    aria-label="اختر المادة"
-                  >
-                    <option value="">المادة</option>
-                    {filteredSubjects.map((subject) => (
-                      <option key={subject.id} value={subject.id}>
-                        {subject.name}
-                      </option>
-                    ))}
-                  </select>
-                  <label className="flex h-9 items-center rounded-lg border border-slate-200 bg-white px-3 text-sm text-slate-600">
-                    <input
-                      type="file"
-                      className="hidden"
-                      accept=".pdf,.jpg,.jpeg,.png,.webp"
-                      onChange={(event) => setPaperFile(event.target.files?.[0] ?? null)}
-                    />
-                    {paperFile ? paperFile.name : "اختر ملف ورقة العمل"}
-                  </label>
-                  <button
-                    type="button"
-                    className="h-9 rounded-lg bg-[var(--color-sidebar-bg)] px-4 text-sm text-white disabled:cursor-not-allowed disabled:opacity-60"
-                    onClick={handleUpload}
-                    disabled={uploading}
-                  >
-                    {uploading ? "جارٍ الرفع..." : "رفع"}
-                  </button>
+                <div className="rounded-2xl border border-slate-100 bg-white p-5 shadow-sm">
+                  <div className="grid gap-4 md:grid-cols-3">
+                    <div className="flex flex-col gap-2">
+                      <span className="text-xs font-medium text-slate-500">المرحلة</span>
+                      <select
+                        className="h-10 rounded-xl border border-slate-200 bg-white px-3 text-sm text-slate-700 outline-none transition focus-visible:border-[var(--color-accent)] focus-visible:ring-2 focus-visible:ring-[rgba(170,196,245,0.45)]"
+                        value={levelId}
+                        onChange={(event) =>
+                          handleLevelChange(event.target.value ? Number(event.target.value) : "")
+                        }
+                        aria-label="اختر المرحلة"
+                      >
+                        <option value="">اختر المرحلة</option>
+                        {levels.map((level) => (
+                          <option key={level.id} value={level.id}>
+                            {level.name}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+                    <div className="flex flex-col gap-2">
+                      <span className="text-xs font-medium text-slate-500">الصف</span>
+                      <select
+                        className="h-10 rounded-xl border border-slate-200 bg-white px-3 text-sm text-slate-700 outline-none transition focus-visible:border-[var(--color-accent)] focus-visible:ring-2 focus-visible:ring-[rgba(170,196,245,0.45)]"
+                        value={classId}
+                        onChange={(event) =>
+                          handleClassChange(event.target.value ? Number(event.target.value) : "")
+                        }
+                        aria-label="اختر الصف"
+                      >
+                        <option value="">اختر الصف</option>
+                        {classes.map((schoolClass) => (
+                          <option key={schoolClass.id} value={schoolClass.id}>
+                            {schoolClass.name}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+                    <div className="flex flex-col gap-2">
+                      <span className="text-xs font-medium text-slate-500">المادة</span>
+                      <select
+                        className="h-10 rounded-xl border border-slate-200 bg-white px-3 text-sm text-slate-700 outline-none transition focus-visible:border-[var(--color-accent)] focus-visible:ring-2 focus-visible:ring-[rgba(170,196,245,0.45)]"
+                        value={subjectId}
+                        onChange={(event) =>
+                          setSubjectId(event.target.value ? Number(event.target.value) : "")
+                        }
+                        aria-label="اختر المادة"
+                      >
+                        <option value="">اختر المادة</option>
+                        {filteredSubjects.map((subject) => (
+                          <option key={subject.id} value={subject.id}>
+                            {subject.name}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+                  </div>
+
+                  <div className="mt-5 rounded-2xl border border-dashed border-slate-300 bg-[var(--color-surface-alt)] p-6 text-center">
+                    <label className="flex cursor-pointer flex-col items-center gap-2 text-sm text-slate-600">
+                      <input
+                        type="file"
+                        className="hidden"
+                        accept=".pdf,.jpg,.jpeg,.png,.webp"
+                        onChange={(event) => setPaperFile(event.target.files?.[0] ?? null)}
+                      />
+                      <span className="text-sm font-medium text-slate-700">
+                        {paperFile ? paperFile.name : "اسحب ملف ورقة العمل هنا أو اضغط للاختيار"}
+                      </span>
+                      <span className="text-xs text-slate-500">PDF أو صورة، بحد أقصى 20MB</span>
+                    </label>
+                  </div>
+
+                  <div className="mt-5 flex items-center justify-between">
+                    <span className="text-xs text-slate-500">
+                      سيتم رفع الملف وربطه بالمادة المحددة.
+                    </span>
+                    <button
+                      type="button"
+                      className="h-10 rounded-xl bg-[var(--color-sidebar-bg)] px-6 text-sm text-white transition hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-60"
+                      onClick={handleUpload}
+                      disabled={uploading}
+                    >
+                      {uploading ? "جارٍ الرفع..." : "رفع ورقة العمل"}
+                    </button>
+                  </div>
                 </div>
-                {uploadError ? <div className="mb-3 text-sm text-red-600">{uploadError}</div> : null}
-                {uploadSuccess ? <div className="mb-3 text-sm text-green-600">{uploadSuccess}</div> : null}
+
+                {uploadError ? <div className="mt-4 text-sm text-red-600">{uploadError}</div> : null}
+                {uploadSuccess ? <div className="mt-4 text-sm text-green-600">{uploadSuccess}</div> : null}
                 <div className="rounded-2xl bg-white p-4 shadow-sm border border-slate-100">
                   <div className="overflow-x-auto">
                     <table className="w-full text-sm">

@@ -46,6 +46,11 @@ const teacherNav = [
     icon: ClipboardListIcon,
   },
   {
+    title: "الاختبارات الشهرية",
+    url: "/teacher/monthly-tests",
+    icon: FileTextIcon,
+  },
+  {
     title: "أوراق العمل",
     url: "/teacher/paper-work",
     icon: FileTextIcon,
@@ -253,89 +258,105 @@ export default function TeacherReportsPage() {
           <div className="@container/main flex flex-1 flex-col gap-2">
             <div className="flex flex-col gap-4 py-4 md:gap-6 md:py-6">
               <div className="px-4 lg:px-6">
-                <div className="flex w-full max-w-[920px] overflow-hidden rounded-xl border border-slate-100 bg-white shadow-sm">
-                  <div className="flex w-[210px] flex-col items-center justify-center gap-2 bg-[--color-sidebar-bg] text-white">
-                    <FileTextIcon className="h-7 w-7" />
-                    <span className="text-base font-semibold">التقارير</span>
+                <div className="flex w-full max-w-[980px] overflow-hidden rounded-2xl border border-slate-100 bg-white shadow-sm">
+                  <div className="flex w-[220px] flex-col items-center justify-center gap-2 bg-[--color-sidebar-bg] text-white">
+                    <FileTextIcon className="h-6 w-6" />
+                    <span className="text-sm font-semibold">التقارير</span>
                   </div>
-                  <div className="flex flex-1 items-center px-6 py-6 text-right text-[18px] font-medium leading-[32px] text-black">
+                  <div className="flex flex-1 items-center px-6 py-6 text-right text-[16px] font-medium leading-[28px] text-slate-700">
                     يساعد تقرير المعلّم الإدارة المدرسية في تكوين صورة واضحة عن مستوى الطالب الأكاديمي والسلوكي داخل الصف. كما يمكّن من تحديد نقاط القوة ودعمها، واكتشاف أي مشكلات أو صعوبات تحتاج إلى تدخل مبكر. يساهم التقرير أيضًا في تعزيز التعاون بين المعلّم والإدارة وولي الأمر لتحقيق مصلحة الطالب
                   </div>
                 </div>
-                <div className="mt-8 w-full max-w-[1025px] rounded-xl p-8 text-white">
+
+                <div className="mt-8 w-full max-w-[1025px] rounded-2xl border border-slate-100 bg-white p-8 shadow-sm">
                   <div className="mb-6 grid gap-4 md:grid-cols-4">
-                    <select
-                      className="h-10 rounded-md bg-[--color-sidebar-bg] px-3 text-sm text-white outline-none"
-                      value={levelId}
-                      onChange={(event) => {
-                        setLevelId(event.target.value ? Number(event.target.value) : "")
-                        setClassId("")
-                        setSubjectId("")
-                        setStudentId("")
-                      }}
-                      aria-label="اختر المرحلة"
-                    >
-                      <option value="">المرحلة</option>
-                      {levels.map((level) => (
-                        <option key={level.id} value={level.id}>
-                          {level.name}
-                        </option>
-                      ))}
-                    </select>
-                    <select
-                      className="h-10 rounded-md bg-[--color-sidebar-bg] px-3 text-sm text-white outline-none"
-                      value={classId}
-                      onChange={(event) => {
-                        setClassId(event.target.value ? Number(event.target.value) : "")
-                        setSubjectId("")
-                        setStudentId("")
-                      }}
-                      aria-label="اختر الصف"
-                    >
-                      <option value="">الصف</option>
-                      {classes.map((schoolClass) => (
-                        <option key={schoolClass.id} value={schoolClass.id}>
-                          {schoolClass.name}
-                        </option>
-                      ))}
-                    </select>
-                    <select
-                      className="h-10 rounded-md bg-[--color-sidebar-bg] px-3 text-sm text-white outline-none"
-                      value={subjectId}
-                      onChange={(event) => setSubjectId(event.target.value ? Number(event.target.value) : "")}
-                      aria-label="اختر المادة"
-                    >
-                      <option value="">المادة</option>
-                      {filteredSubjects.map((subject) => (
-                        <option key={subject.id} value={subject.id}>
-                          {subject.name}
-                        </option>
-                      ))}
-                    </select>
-                    <select
-                      className="h-10 rounded-md bg-[--color-sidebar-bg] px-3 text-sm text-white outline-none"
-                      value={studentId}
-                      onChange={(event) => setStudentId(event.target.value ? Number(event.target.value) : "")}
-                      aria-label="اختر الطالب"
-                    >
-                      <option value="">الطالب</option>
-                      {students.map((student) => (
-                        <option key={student.id} value={student.id}>
-                          {student.full_name}
-                        </option>
-                      ))}
-                    </select>
+                    <div className="flex flex-col gap-2">
+                      <span className="text-xs font-medium text-slate-500">المرحلة</span>
+                      <select
+                        className="h-10 rounded-xl border border-slate-200 bg-white px-3 text-sm text-slate-700 outline-none transition focus-visible:border-[var(--color-accent)] focus-visible:ring-2 focus-visible:ring-[rgba(170,196,245,0.45)]"
+                        value={levelId}
+                        onChange={(event) => {
+                          setLevelId(event.target.value ? Number(event.target.value) : "")
+                          setClassId("")
+                          setSubjectId("")
+                          setStudentId("")
+                        }}
+                        aria-label="اختر المرحلة"
+                      >
+                        <option value="">اختر المرحلة</option>
+                        {levels.map((level) => (
+                          <option key={level.id} value={level.id}>
+                            {level.name}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+                    <div className="flex flex-col gap-2">
+                      <span className="text-xs font-medium text-slate-500">الصف</span>
+                      <select
+                        className="h-10 rounded-xl border border-slate-200 bg-white px-3 text-sm text-slate-700 outline-none transition focus-visible:border-[var(--color-accent)] focus-visible:ring-2 focus-visible:ring-[rgba(170,196,245,0.45)]"
+                        value={classId}
+                        onChange={(event) => {
+                          setClassId(event.target.value ? Number(event.target.value) : "")
+                          setSubjectId("")
+                          setStudentId("")
+                        }}
+                        aria-label="اختر الصف"
+                      >
+                        <option value="">اختر الصف</option>
+                        {classes.map((schoolClass) => (
+                          <option key={schoolClass.id} value={schoolClass.id}>
+                            {schoolClass.name}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+                    <div className="flex flex-col gap-2">
+                      <span className="text-xs font-medium text-slate-500">المادة</span>
+                      <select
+                        className="h-10 rounded-xl border border-slate-200 bg-white px-3 text-sm text-slate-700 outline-none transition focus-visible:border-[var(--color-accent)] focus-visible:ring-2 focus-visible:ring-[rgba(170,196,245,0.45)]"
+                        value={subjectId}
+                        onChange={(event) =>
+                          setSubjectId(event.target.value ? Number(event.target.value) : "")
+                        }
+                        aria-label="اختر المادة"
+                      >
+                        <option value="">اختر المادة</option>
+                        {filteredSubjects.map((subject) => (
+                          <option key={subject.id} value={subject.id}>
+                            {subject.name}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+                    <div className="flex flex-col gap-2">
+                      <span className="text-xs font-medium text-slate-500">الطالب</span>
+                      <select
+                        className="h-10 rounded-xl border border-slate-200 bg-white px-3 text-sm text-slate-700 outline-none transition focus-visible:border-[var(--color-accent)] focus-visible:ring-2 focus-visible:ring-[rgba(170,196,245,0.45)]"
+                        value={studentId}
+                        onChange={(event) => setStudentId(event.target.value ? Number(event.target.value) : "")}
+                        aria-label="اختر الطالب"
+                      >
+                        <option value="">اختر الطالب</option>
+                        {students.map((student) => (
+                          <option key={student.id} value={student.id}>
+                            {student.full_name}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
                   </div>
-                  <div className="grid gap-6 lg:grid-cols-3">
+
+                  <div className="grid gap-8 lg:grid-cols-3">
                     <div className="space-y-6">
                       {radioGroups.slice(0, 4).map((group) => (
                         <div key={group.key} className="space-y-2">
-                          <div className="text-[15px] font-medium text-black">{group.label}</div>
-                          <div className="flex flex-wrap gap-5">
+                          <div className="text-sm font-semibold text-slate-700">{group.label}</div>
+                          <div className="flex flex-wrap gap-4">
                             {performanceOptions.map((option) => (
                               <label
                                 key={option}
-                                className="flex items-center gap-2 text-[15px] font-medium text-black"
+                                className="flex items-center gap-2 rounded-full border border-slate-200 bg-white px-3 py-1.5 text-xs font-medium text-slate-700 transition hover:border-slate-300"
                               >
                                 <input
                                   type="radio"
@@ -343,7 +364,7 @@ export default function TeacherReportsPage() {
                                   value={option}
                                   checked={formData[group.key] === option}
                                   onChange={() => handleRadioChange(group.key, option)}
-                                  className="h-4 w-4"
+                                  className="h-3.5 w-3.5"
                                 />
                                 {option}
                               </label>
@@ -356,12 +377,12 @@ export default function TeacherReportsPage() {
                     <div className="space-y-6">
                       {radioGroups.slice(4, 7).map((group) => (
                         <div key={group.key} className="space-y-2">
-                          <div className="text-[15px] font-medium text-black">{group.label}</div>
-                          <div className="flex flex-wrap gap-5">
+                          <div className="text-sm font-semibold text-slate-700">{group.label}</div>
+                          <div className="flex flex-wrap gap-4">
                             {performanceOptions.map((option) => (
                               <label
                                 key={option}
-                                className="flex items-center gap-2 text-[15px] font-medium text-black"
+                                className="flex items-center gap-2 rounded-full border border-slate-200 bg-white px-3 py-1.5 text-xs font-medium text-slate-700 transition hover:border-slate-300"
                               >
                                 <input
                                   type="radio"
@@ -369,7 +390,7 @@ export default function TeacherReportsPage() {
                                   value={option}
                                   checked={formData[group.key] === option}
                                   onChange={() => handleRadioChange(group.key, option)}
-                                  className="h-4 w-4"
+                                  className="h-3.5 w-3.5"
                                 />
                                 {option}
                               </label>
@@ -382,40 +403,40 @@ export default function TeacherReportsPage() {
                       <div className="grid gap-4 md:grid-cols-2">
                         {textFields.slice(2, 6).map((field) => (
                           <div key={field.key} className="space-y-2">
-                            <div className="text-[12px] font-medium text-black">{field.label}</div>
+                            <div className="text-xs font-medium text-slate-500">{field.label}</div>
                             <input
                               type="text"
                               value={formData[field.key]}
                               onChange={(event) => handleTextChange(field.key, event.target.value)}
-                              className="h-10 w-full rounded-md bg-gray-100 px-3 text-sm text-black outline-none"
+                              className="h-10 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm text-slate-700 outline-none transition focus-visible:border-[var(--color-accent)] focus-visible:ring-2 focus-visible:ring-[rgba(170,196,245,0.45)]"
                             />
                           </div>
                         ))}
                       </div>
-                        <div className="grid gap-4 md:grid-cols-2">
+                      <div className="grid gap-4 md:grid-cols-2">
                         {textFields.slice(0, 2).map((field) => (
                           <div key={field.key} className="space-y-2">
-                            <div className="text-[12px] font-medium text-black">{field.label}</div>
+                            <div className="text-xs font-medium text-slate-500">{field.label}</div>
                             <input
                               type="text"
                               value={formData[field.key]}
                               onChange={(event) => handleTextChange(field.key, event.target.value)}
-                              className="h-10 w-full rounded-md bg-gray-100 px-3 text-sm text-black outline-none"
+                              className="h-10 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm text-slate-700 outline-none transition focus-visible:border-[var(--color-accent)] focus-visible:ring-2 focus-visible:ring-[rgba(170,196,245,0.45)]"
                             />
                           </div>
                         ))}
                       </div>
                       <div className="space-y-2">
-                        <div className="text-[12px] font-medium text-black">التوصيات</div>
+                        <div className="text-xs font-medium text-slate-500">التوصيات</div>
                         <textarea
                           value={formData.recommendations}
                           onChange={(event) => handleTextChange("recommendations", event.target.value)}
-                          className="h-40 w-full resize-none rounded-md bg-gray-100 px-3 py-3 text-sm text-black outline-none"
+                          className="h-40 w-full resize-none rounded-xl border border-slate-200 bg-white px-3 py-3 text-sm text-slate-700 outline-none transition focus-visible:border-[var(--color-accent)] focus-visible:ring-2 focus-visible:ring-[rgba(170,196,245,0.45)]"
                         />
                       </div>
                       <button
                         type="button"
-                        className="h-10 w-full rounded-md bg-[var(--color-sidebar-bg)] text-sm font-semibold text-white"
+                        className="h-11 w-full rounded-xl bg-[var(--color-sidebar-bg)] text-sm font-semibold text-white transition hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-60"
                         onClick={handleSubmit}
                         disabled={saving}
                       >

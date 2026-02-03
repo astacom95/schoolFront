@@ -46,6 +46,11 @@ const teacherNav = [
     icon: ClipboardListIcon,
   },
   {
+    title: "الاختبارات الشهرية",
+    url: "/teacher/monthly-tests",
+    icon: FileTextIcon,
+  },
+  {
     title: "أوراق العمل",
     url: "/teacher/paper-work",
     icon: FileTextIcon,
@@ -316,77 +321,97 @@ export default function TeacherMarksPage() {
           <div className="@container/main flex flex-1 flex-col gap-2">
             <div className="flex flex-col gap-4 py-4 md:gap-6 md:py-6">
               <div className="px-4 lg:px-6">
-                <div className="mb-4 flex flex-wrap items-center gap-2">
-                  <select
-                    className="h-9 rounded-lg bg-[var(--color-sidebar-bg)] text-white px-3  text-sm text-black outline-none"
-                    value={levelId}
-                    onChange={(event) => handleLevelChange(event.target.value ? Number(event.target.value) : "")}
-                    aria-label="اختر المرحلة"
-                  >
-                    <option value="">المرحلة</option>
-                    {levels.map((level) => (
-                      <option key={level.id} value={level.id}>
-                        {level.name}
-                      </option>
-                    ))}
-                  </select>
-                  <select
-                    className="h-9 rounded-lg bg-[var(--color-sidebar-bg)] text-white px-3 text-sm text-black outline-none"
-                    value={classId}
-                    onChange={(event) => handleClassChange(event.target.value ? Number(event.target.value) : "")}
-                    aria-label="اختر الصف"
-                  >
-                    <option value="">الصف</option>
-                    {classes.map((schoolClass) => (
-                      <option key={schoolClass.id} value={schoolClass.id}>
-                        {schoolClass.name}
-                      </option>
-                    ))}
-                  </select>
-                  <select
-                    className="h-9 rounded-lg bg-[var(--color-sidebar-bg)] text-white px-3 text-sm text-black outline-none"
-                    value={subjectId}
-                    onChange={(event) => handleSubjectChange(event.target.value ? Number(event.target.value) : "")}
-                    aria-label="اختر المادة"
-                  >
-                    <option value="">المادة</option>
-                    {filteredSubjects.map((subject) => (
-                      <option key={subject.id} value={subject.id}>
-                        {subject.name}
-                      </option>
-                    ))}
-                  </select>
+                <div className="rounded-2xl border border-slate-100 bg-white p-5 shadow-sm">
+                  <div className="grid gap-4 md:grid-cols-3">
+                    <div className="flex flex-col gap-2">
+                      <span className="text-xs font-medium text-slate-500">المرحلة</span>
+                      <select
+                        className="h-10 rounded-xl border border-slate-200 bg-white px-3 text-sm text-slate-700 outline-none transition focus-visible:border-[var(--color-accent)] focus-visible:ring-2 focus-visible:ring-[rgba(170,196,245,0.45)]"
+                        value={levelId}
+                        onChange={(event) =>
+                          handleLevelChange(event.target.value ? Number(event.target.value) : "")
+                        }
+                        aria-label="اختر المرحلة"
+                      >
+                        <option value="">اختر المرحلة</option>
+                        {levels.map((level) => (
+                          <option key={level.id} value={level.id}>
+                            {level.name}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+                    <div className="flex flex-col gap-2">
+                      <span className="text-xs font-medium text-slate-500">الصف</span>
+                      <select
+                        className="h-10 rounded-xl border border-slate-200 bg-white px-3 text-sm text-slate-700 outline-none transition focus-visible:border-[var(--color-accent)] focus-visible:ring-2 focus-visible:ring-[rgba(170,196,245,0.45)]"
+                        value={classId}
+                        onChange={(event) =>
+                          handleClassChange(event.target.value ? Number(event.target.value) : "")
+                        }
+                        aria-label="اختر الصف"
+                      >
+                        <option value="">اختر الصف</option>
+                        {classes.map((schoolClass) => (
+                          <option key={schoolClass.id} value={schoolClass.id}>
+                            {schoolClass.name}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+                    <div className="flex flex-col gap-2">
+                      <span className="text-xs font-medium text-slate-500">المادة</span>
+                      <select
+                        className="h-10 rounded-xl border border-slate-200 bg-white px-3 text-sm text-slate-700 outline-none transition focus-visible:border-[var(--color-accent)] focus-visible:ring-2 focus-visible:ring-[rgba(170,196,245,0.45)]"
+                        value={subjectId}
+                        onChange={(event) =>
+                          handleSubjectChange(event.target.value ? Number(event.target.value) : "")
+                        }
+                        aria-label="اختر المادة"
+                      >
+                        <option value="">اختر المادة</option>
+                        {filteredSubjects.map((subject) => (
+                          <option key={subject.id} value={subject.id}>
+                            {subject.name}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+                  </div>
                 </div>
-                <div className="w-full max-w-[670px] rounded-md border border-black/25 bg-white shadow-sm">
-                  <div className="flex h-[325px] flex-col px-4 pb-3 pt-2">
+
+                <div className="mt-5 w-full max-w-[780px] rounded-2xl border border-slate-100 bg-white p-4 shadow-sm">
+                  <div className="flex h-[360px] flex-col">
                     <div className="grid grid-cols-[1.35fr_0.95fr_1.15fr_0.85fr] gap-3">
                       {markHeaders.map((header) => (
                         <div
                           key={header}
-                          className="flex h-8 items-center justify-center rounded-[5px] bg-[#EAF6FC] text-[12px] font-medium text-black"
+                          className="flex h-9 items-center justify-center rounded-lg bg-[var(--color-surface-alt)] text-xs font-semibold text-slate-700"
                         >
                           {header}
                         </div>
                       ))}
                     </div>
-                    <div className="mt-3 flex-1 overflow-y-auto border-t border-black/25">
+                    <div className="mt-3 flex-1 overflow-y-auto border-t border-slate-200">
                       {tableRows.map((row, index) => (
                         <div
                           key={`mark-row-${index}`}
-                          className={`grid min-h-[36px] grid-cols-[1.35fr_0.95fr_1.15fr_0.85fr] border-b border-black/25 text-[12px] text-black ${row.placeholder ? "" : "cursor-pointer hover:bg-[#F5FBFF]"}`}
+                          className={`grid min-h-[40px] grid-cols-[1.35fr_0.95fr_1.15fr_0.85fr] border-b border-slate-200 text-xs text-slate-700 ${
+                            row.placeholder ? "" : "cursor-pointer hover:bg-[var(--color-surface-alt)]"
+                          }`}
                           onClick={() => {
                             if (!row.placeholder && row.id && subjectId) {
                               setEditingStudentId(row.id)
                             }
                           }}
                         >
-                          <div className="flex items-center justify-center border-l border-black/25">
+                          <div className="flex items-center justify-center border-l border-slate-200">
                             {row.name}
                           </div>
-                          <div className="flex items-center justify-center border-l border-black/25">
+                          <div className="flex items-center justify-center border-l border-slate-200">
                             {row.full}
                           </div>
-                          <div className="flex items-center justify-center border-l border-black/25">
+                          <div className="flex items-center justify-center border-l border-slate-200">
                             {row.participation}
                           </div>
                           <div className="flex items-center justify-center">
@@ -395,7 +420,7 @@ export default function TeacherMarksPage() {
                                 type="number"
                                 min={0}
                                 max={selectedSubject?.total_degree ?? undefined}
-                                className="h-8 w-20 rounded-md border border-black/20 bg-white px-2 text-center text-[12px] outline-none"
+                                className="h-8 w-20 rounded-lg border border-slate-200 bg-white px-2 text-center text-xs text-slate-700 outline-none transition focus-visible:border-[var(--color-accent)] focus-visible:ring-2 focus-visible:ring-[rgba(170,196,245,0.45)]"
                                 value={marksByStudent[row.id] ?? ""}
                                 onChange={(event) => handleMarkChange(row.id!, event.target.value)}
                                 onClick={(event) => event.stopPropagation()}
@@ -409,10 +434,11 @@ export default function TeacherMarksPage() {
                     </div>
                   </div>
                 </div>
+
                 <div className="mt-4 flex flex-wrap items-center gap-3">
                   <button
                     type="button"
-                    className="h-9 rounded-lg bg-[var(--color-sidebar-bg)]  px-4 text-sm text-white disabled:cursor-not-allowed disabled:opacity-60"
+                    className="h-10 rounded-xl bg-[var(--color-sidebar-bg)] px-6 text-sm text-white transition hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-60"
                     onClick={handleSave}
                     disabled={!subjectId || !classId || saving}
                   >

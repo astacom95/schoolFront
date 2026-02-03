@@ -35,7 +35,7 @@ const studentNav = [
   },
   {
     title: "الاختبارات",
-    url: "#",
+    url: "/student/monthly-tests",
     icon: ClipboardListIcon,
   },
   {

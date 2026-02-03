@@ -74,6 +74,11 @@ const teacherNav = [
     icon: ClipboardListIcon,
   },
   {
+    title: "الاختبارات الشهرية",
+    url: "/teacher/monthly-tests",
+    icon: FileTextIcon,
+  },
+  {
     title: "أوراق العمل",
     url: "/teacher/paper-work",
     icon: FileTextIcon,
