@@ -64,6 +64,11 @@ const data = {
       icon: BookOpenIcon,
     },
     {
+      title: "الإرشاد الطلابي",
+      url: "/manager/guidance",
+      icon: HelpCircleIcon,
+    },
+    {
       title: "جدول المعلمين",
       url: "/manager/teacher-timetable",
       icon: ListChecksIcon,

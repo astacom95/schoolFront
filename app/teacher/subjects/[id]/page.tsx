@@ -104,7 +104,7 @@ const teacherNav = [
 const chartConfig = {
   progress: {
     label: "Progress",
-    color: "#1D1E1F",
+    color: "#1d1f1eff",
   },
 } satisfies ChartConfig
 

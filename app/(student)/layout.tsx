@@ -45,12 +45,12 @@ const studentNav = [
   },
   {
     title: "الارشاد",
-    url: "#",
+    url: "/student/guidance",
     icon: HelpCircleIcon,
   },
   {
     title: "أوراق عمل",
-    url: "#",
+    url: "/student/papers",
     icon: BookOpenIcon,
   },
   

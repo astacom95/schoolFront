@@ -1,5 +1,6 @@
 "use client"
 
+import Link from "next/link"
 import { useEffect, useMemo, useState } from "react"
 
 import { apiFetch } from "@/lib/api/client"
@@ -51,8 +52,9 @@ export default function StudentSubjectsPage() {
             ) : (
               <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
                 {subjectCards.map((subject) => (
-                  <div
+                  <Link
                     key={subject.id}
+                    href={`/student/subjects/${subject.id}`}
                     className="relative h-[357px] w-[254px] overflow-hidden rounded-lg shadow-sm"
                   >
                     {subject.imageUrl ? (
@@ -78,7 +80,7 @@ export default function StudentSubjectsPage() {
                         </div>
                       </div>
                     </div>
-                  </div>
+                  </Link>
                 ))}
               </div>
             )}

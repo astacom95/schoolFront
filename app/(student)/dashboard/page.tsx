@@ -1,16 +1,24 @@
 "use client"
 
 import { Fragment, useEffect, useMemo, useState } from "react"
+import {
+  Label,
+  PolarAngleAxis,
+  PolarGrid,
+  PolarRadiusAxis,
+  RadialBar,
+  RadialBarChart,
+} from "recharts"
 
 import { SectionCards } from "@/components/section-cards"
 import { apiFetch } from "@/lib/api/client"
+import { ChartContainer, type ChartConfig } from "@/components/ui/chart"
 
-const studentCards = [
+const baseStudentCards = [
   {
     title: "القاعة",
     value: "جاهز",
     footerTitle: "البث المباشر والتسجيلات",
-    footerNote: "آخر تحديث اليوم",
     trend: "none" as const,
     imageSrc: "/assets/mdi_laptop-account.svg",
     imageAlt: "القاعة",
@@ -20,16 +28,14 @@ const studentCards = [
     title: "الاختبارات",
     value: "قريباً",
     footerTitle: "اختبارات شهرية",
-    footerNote: "قيد الإعداد",
     trend: "down" as const,
     imageSrc: "/assets/Vector (2).svg",
     imageAlt: "الاختبارات",
   },
   {
     title: "المواد الدراسية",
-    value: "قريباً",
+    value: "0",
     footerTitle: "ملخصات وواجبات",
-    footerNote: "قيد الإعداد",
     trend: "none" as const,
     imageSrc: "/assets/Vector (1).svg",
     imageAlt: "المواد الدراسية",
@@ -39,10 +45,10 @@ const studentCards = [
     title: "الارشاد",
     value: "قريباً",
     footerTitle: "دعم وتوجيه",
-    footerNote: "قيد الإعداد",
     trend: "none" as const,
     imageSrc: "/assets/Vector.svg",
     imageAlt: "الارشاد",
+    href: "/student/guidance",
   },
 ]
 
@@ -75,9 +81,27 @@ type TimetableEntry = {
   subject_name?: string | null
 }
 
+type SubjectRow = {
+  id: number
+}
+
+type AttendanceOverview = {
+  average_score?: number | null
+  average_percent?: number | null
+}
+
+const attendanceChartConfig = {
+  attendance: {
+    label: "Attendance",
+    color: "#39559E",
+  },
+} satisfies ChartConfig
+
 export default function StudentDashboard() {
   const [timetableEntries, setTimetableEntries] = useState<TimetableEntry[]>([])
   const [timetableError, setTimetableError] = useState<string | null>(null)
+  const [subjectCount, setSubjectCount] = useState(0)
+  const [attendancePercent, setAttendancePercent] = useState(0)
 
   useEffect(() => {
     const loadTimetable = async () => {
@@ -93,6 +117,48 @@ export default function StudentDashboard() {
     }
     void loadTimetable()
   }, [])
+
+  useEffect(() => {
+    const loadSubjects = async () => {
+      try {
+        const response = (await apiFetch("/student/subjects")) as { data?: SubjectRow[] }
+        const subjects = Array.isArray(response?.data) ? response.data : []
+        setSubjectCount(subjects.length)
+      } catch {
+        setSubjectCount(0)
+      }
+    }
+    void loadSubjects()
+  }, [])
+
+  useEffect(() => {
+    const loadAttendanceOverview = async () => {
+      try {
+        const response = (await apiFetch("/student/attendance/overall")) as {
+          data?: AttendanceOverview
+        }
+        const percentRaw = response?.data?.average_percent
+        const scoreRaw = response?.data?.average_score
+        const percent =
+          typeof percentRaw === "number"
+            ? percentRaw
+            : typeof scoreRaw === "number"
+              ? (scoreRaw / 7) * 100
+              : 0
+        const safePercent = Math.max(0, Math.min(100, Math.round(percent)))
+        setAttendancePercent(safePercent)
+      } catch {
+        setAttendancePercent(0)
+      }
+    }
+    void loadAttendanceOverview()
+  }, [])
+
+  const studentCards = useMemo(() => {
+    return baseStudentCards.map((card) =>
+      card.title === "المواد الدراسية" ? { ...card, value: String(subjectCount) } : card,
+    )
+  }, [subjectCount])
 
   const todayEnglish = new Intl.DateTimeFormat("en", { weekday: "long" }).format(new Date())
   const currentMinutes = new Date().getHours() * 60 + new Date().getMinutes()
@@ -165,11 +231,77 @@ export default function StudentDashboard() {
     })
   }, [timetableEntries])
 
+  const attendanceChartData = useMemo(() => {
+    return [{ name: "attendance", value: attendancePercent, fill: "#39559E" }]
+  }, [attendancePercent])
+
   return (
     <div className="flex flex-1 flex-col">
       <div className="@container/main flex flex-1 flex-col gap-2">
         <div className="flex flex-col gap-6 py-4 md:gap-6 md:py-6">
           <SectionCards items={studentCards} />
+
+          <div className="px-4 lg:px-6">
+            <div className="flex flex-wrap gap-4">
+              <div className="relative h-[255px] w-[240px] rounded-2xl border border-slate-100 bg-white px-4 pt-3 shadow-sm">
+                <div className="text-center text-xs font-semibold text-black">الحضور والغياب</div>
+                <div className="relative mt-4 flex h-[170px] w-[200px] items-center justify-center">
+                  <ChartContainer
+                    config={attendanceChartConfig}
+                    className="h-[170px] w-[200px]"
+                  >
+                    <RadialBarChart
+                      data={attendanceChartData}
+                      startAngle={180}
+                      endAngle={0}
+                      innerRadius={64}
+                      outerRadius={95}
+                      cx="50%"
+                      cy="100%"
+                    >
+                      <PolarAngleAxis
+                        type="number"
+                        dataKey="value"
+                        domain={[0, 100]}
+                        tick={false}
+                      />
+                      <PolarGrid
+                        gridType="circle"
+                        radialLines={false}
+                        stroke="none"
+                        className="first:fill-transparent last:fill-background"
+                        polarRadius={[90, 70]}
+                      />
+                      <RadialBar dataKey="value" background={{ fill: "#D9DEEC" }} cornerRadius={8} />
+                      <PolarRadiusAxis tick={false} tickLine={false} axisLine={false} domain={[0, 100]}>
+                        <Label
+                          content={({ viewBox }) => {
+                            if (viewBox && "cx" in viewBox && "cy" in viewBox) {
+                              return (
+                                <text
+                                  x={viewBox.cx}
+                                  y={(viewBox.cy || 0) - 18}
+                                  textAnchor="middle"
+                                  dominantBaseline="middle"
+                                >
+                                  <tspan className="fill-black text-[13px] font-bold">
+                                    {attendancePercent}%
+                                  </tspan>
+                                </text>
+                              )
+                            }
+                          }}
+                        />
+                      </PolarRadiusAxis>
+                    </RadialBarChart>
+                  </ChartContainer>
+                </div>
+                <div className="mt-2 text-center text-xs font-semibold text-black">
+                  نسبة الحضور والغياب اليومي
+                </div>
+              </div>
+            </div>
+          </div>
 
           <div className="rounded-2xl bg-white p-4 mx-4 shadow-sm border border-slate-100 lg:mx-6">
             <div className="flex flex-wrap items-center justify-between gap-3 mb-3">
