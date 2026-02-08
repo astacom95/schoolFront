@@ -20,12 +20,14 @@ import {
   Sidebar,
   SidebarContent,
   SidebarHeader,
+  SidebarFooter,
   SidebarInset,
   SidebarMenu,
   SidebarMenuButton,
   SidebarMenuItem,
   SidebarProvider,
 } from "@/components/ui/sidebar"
+import { TeacherSidebarFooter } from "@/components/teacher-sidebar-footer"
 
 type Subject = {
   id: number
@@ -221,6 +223,9 @@ export default function TeacherLessonsPage() {
         <SidebarContent>
           <NavMain items={teacherNav} />
         </SidebarContent>
+        <SidebarFooter>
+          <TeacherSidebarFooter />
+        </SidebarFooter>
       </Sidebar>
       <SidebarInset className="bg-white text-[var(--color-text)]">
         <header className="group-has-data-[collapsible=icon]/sidebar-wrapper:h-12 flex h-12 shrink-0 items-center gap-2 border-b transition-[width,height] ease-linear">

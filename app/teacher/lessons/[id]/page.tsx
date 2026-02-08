@@ -19,12 +19,14 @@ import {
   Sidebar,
   SidebarContent,
   SidebarHeader,
+  SidebarFooter,
   SidebarInset,
   SidebarMenu,
   SidebarMenuButton,
   SidebarMenuItem,
   SidebarProvider,
 } from "@/components/ui/sidebar"
+import { TeacherSidebarFooter } from "@/components/teacher-sidebar-footer"
 
 type LessonMedia = {
   id: number
@@ -127,6 +129,7 @@ export default function TeacherLessonDetailsPage() {
   }, [lessonId])
 
   const hasVideo = Boolean(lesson?.embed_url || lesson?.video_url)
+  const isLive = lesson?.media?.status === "live"
 
   return (
     <SidebarProvider>
@@ -149,6 +152,9 @@ export default function TeacherLessonDetailsPage() {
         <SidebarContent>
           <NavMain items={teacherNav} />
         </SidebarContent>
+        <SidebarFooter>
+          <TeacherSidebarFooter />
+        </SidebarFooter>
       </Sidebar>
       <SidebarInset className="bg-white text-[var(--color-text)]">
         <header className="group-has-data-[collapsible=icon]/sidebar-wrapper:h-12 flex h-12 shrink-0 items-center gap-2 border-b transition-[width,height] ease-linear">
@@ -164,83 +170,105 @@ export default function TeacherLessonDetailsPage() {
             </div>
           </div>
         </header>
-        <div className="flex flex-1 flex-col">
-          <div className="@container/main flex flex-1 flex-col gap-6 px-4 py-6 lg:px-6">
+        <div className="flex flex-1 flex-col bg-[#F5F7FA]" dir="rtl">
+          <div className="@container/main flex flex-1 flex-col gap-6 px-4 py-6 lg:px-10">
             {loading ? (
-              <div className="card">جارٍ تحميل تفاصيل الدرس...</div>
+              <div className="mx-auto w-full max-w-6xl rounded-2xl bg-white p-6 text-sm text-slate-600 shadow-sm">
+                جارٍ تحميل تفاصيل الدرس...
+              </div>
             ) : error ? (
-              <div className="card text-red-500">{error}</div>
+              <div className="mx-auto w-full max-w-6xl rounded-2xl bg-white p-6 text-sm text-red-600 shadow-sm">
+                {error}
+              </div>
             ) : !lesson ? (
-              <div className="card">لا توجد بيانات لهذا الدرس.</div>
+              <div className="mx-auto w-full max-w-6xl rounded-2xl bg-white p-6 text-sm text-slate-600 shadow-sm">
+                لا توجد بيانات لهذا الدرس.
+              </div>
             ) : (
-              <>
-                <div className="card">
-                  <div className="flex flex-wrap items-start justify-between gap-4">
-                    <div className="text-right">
-                      <h2 className="text-2xl font-semibold">{lesson.title}</h2>
-                      <p className="text-sm text-slate-500">{lesson.subject_name ?? "—"}</p>
-                      <p className="text-xs text-slate-500">{lesson.created_at ?? "—"}</p>
-                    </div>
-                    {lesson.watch_url ? (
-                      <a
-                        href={lesson.watch_url}
-                        target="_blank"
-                        rel="noreferrer"
-                        className="inline-flex h-9 items-center rounded-lg bg-[var(--color-sidebar-bg)] px-4 text-sm font-medium text-white hover:opacity-90"
-                      >
-                        فتح في يوتيوب
-                      </a>
+              <div className="mx-auto flex w-full max-w-6xl flex-col gap-6">
+                <div className="grid gap-6 lg:grid-cols-[minmax(0,1.4fr)_320px]">
+                  <div className="relative overflow-hidden rounded-3xl bg-white shadow-sm">
+                    {hasVideo ? (
+                      lesson.embed_url ? (
+                        <div className="relative aspect-[4/3] w-full overflow-hidden bg-slate-100">
+                          <iframe
+                            title={lesson.title}
+                            src={lesson.embed_url}
+                            className="absolute inset-0 h-full w-full"
+                            allow="autoplay; encrypted-media"
+                            allowFullScreen
+                          />
+                        </div>
+                      ) : (
+                        <div className="relative aspect-[4/3] w-full overflow-hidden bg-slate-100">
+                          <video
+                            className="absolute inset-0 h-full w-full"
+                            controls
+                            src={lesson.video_url ?? undefined}
+                          />
+                        </div>
+                      )
+                    ) : (
+                      <div className="flex aspect-[4/3] w-full items-center justify-center text-sm text-slate-500">
+                        لا يتوفر فيديو لهذا الدرس بعد.
+                      </div>
+                    )}
+                    {isLive ? (
+                      <div className="absolute left-8 top-1/2 -translate-y-1/2">
+                        <div className="flex items-center gap-3 rounded-2xl bg-red-600 px-6 py-4 text-white shadow-lg">
+                          <span className="h-5 w-5 rounded-full bg-white" />
+                          <span className="text-3xl font-semibold tracking-wide">LIVE</span>
+                        </div>
+                      </div>
                     ) : null}
                   </div>
-                  <div className="mt-4 grid gap-4 text-sm text-slate-600 md:grid-cols-3">
-                    <div>
-                      <p className="text-xs text-slate-500">المرحلة</p>
-                      <p>{lesson.level_name ?? "—"}</p>
+
+                  <div className="flex flex-col gap-4">
+                    <div className="space-y-2">
+                      <div className="text-sm font-semibold text-slate-700">اسم الدرس</div>
+                      <div className="rounded-lg bg-white px-4 py-3 text-sm shadow-sm">
+                        {lesson.title}
+                      </div>
                     </div>
-                    <div>
-                      <p className="text-xs text-slate-500">الفصل</p>
-                      <p>{lesson.class_name ?? "—"}</p>
+                    <div className="space-y-2">
+                      <div className="text-sm font-semibold text-slate-700">المادة</div>
+                      <div className="rounded-lg bg-white px-4 py-3 text-sm shadow-sm">
+                        {lesson.subject_name ?? "—"}
+                      </div>
                     </div>
-                    <div>
-                      <p className="text-xs text-slate-500">نوع الوسائط</p>
-                      <p>{lesson.media?.media_type ?? "—"}</p>
+                    <div className="space-y-2">
+                      <div className="text-sm font-semibold text-slate-700">التاريخ</div>
+                      <div className="rounded-lg bg-white px-4 py-3 text-sm shadow-sm">
+                        {lesson.created_at ?? "—"}
+                      </div>
+                    </div>
+
+                    <div className="space-y-2">
+                      <div className="text-sm font-semibold text-slate-700">تدريبات</div>
+                      <div className="flex h-52 flex-col items-center justify-center gap-4 rounded-lg border border-transparent bg-emerald-100 text-center text-sm font-semibold text-slate-900 shadow-sm opacity-70">
+                        <div className="flex h-24 w-24 items-center justify-center rounded-2xl bg-emerald-500">
+                          <svg
+                            aria-hidden="true"
+                            viewBox="0 0 64 64"
+                            className="h-14 w-14 text-white"
+                            fill="currentColor"
+                          >
+                            <path d="M40 6H18c-2.2 0-4 1.8-4 4v44c0 2.2 1.8 4 4 4h28c2.2 0 4-1.8 4-4V20L40 6zm0 4.5L49.5 20H40v-9.5zM22 28h20v6H22v-6zm0 12h20v6H22v-6z" />
+                          </svg>
+                        </div>
+                        لا يوجد تدريب متاح
+                      </div>
                     </div>
                   </div>
-                  <p className="mt-4 text-sm text-slate-700">{lesson.summary ?? "لا يوجد وصف لهذا الدرس."}</p>
                 </div>
 
-                <div className="card">
-                  <div className="flex items-center justify-between">
-                    <h3 className="text-lg font-semibold">مشاهدة التسجيل</h3>
-                    {lesson.media?.status ? (
-                      <span className="rounded-full bg-slate-100 px-3 py-1 text-xs text-slate-600">
-                        {lesson.media.status}
-                      </span>
-                    ) : null}
+                <div className="space-y-3">
+                  <div className="text-center text-lg font-semibold text-slate-800">ملخص الدرس</div>
+                  <div className="rounded-lg bg-white px-6 py-5 text-sm leading-7 text-slate-700 shadow-sm">
+                    {lesson.summary ?? "لا يوجد وصف لهذا الدرس."}
                   </div>
-                  {!hasVideo ? (
-                    <div className="mt-3 text-sm text-slate-600">لا يتوفر فيديو لهذا الدرس بعد.</div>
-                  ) : lesson.embed_url ? (
-                    <div className="mt-4 aspect-video w-full overflow-hidden rounded-lg border border-slate-200">
-                      <iframe
-                        title={lesson.title}
-                        src={lesson.embed_url}
-                        className="h-full w-full"
-                        allow="autoplay; encrypted-media"
-                        allowFullScreen
-                      />
-                    </div>
-                  ) : (
-                    <div className="mt-4">
-                      <video
-                        className="w-full rounded-lg border border-slate-200"
-                        controls
-                        src={lesson.video_url ?? undefined}
-                      />
-                    </div>
-                  )}
                 </div>
-              </>
+              </div>
             )}
           </div>
         </div>

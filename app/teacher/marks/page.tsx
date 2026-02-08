@@ -17,12 +17,14 @@ import {
   Sidebar,
   SidebarContent,
   SidebarHeader,
+  SidebarFooter,
   SidebarInset,
   SidebarMenu,
   SidebarMenuButton,
   SidebarMenuItem,
   SidebarProvider,
 } from "@/components/ui/sidebar"
+import { TeacherSidebarFooter } from "@/components/teacher-sidebar-footer"
 
 const teacherNav = [
   {
@@ -82,6 +84,12 @@ type StudentOption = {
   full_name: string
 }
 
+type ExamPeriodOption = {
+  id: number
+  exam_name: string
+  exam_year: number
+}
+
 type MarkRow = {
   id?: number
   name: string
@@ -101,9 +109,11 @@ const markHeaders = [
 export default function TeacherMarksPage() {
   const [subjects, setSubjects] = useState<SubjectOption[]>([])
   const [students, setStudents] = useState<StudentOption[]>([])
+  const [examPeriods, setExamPeriods] = useState<ExamPeriodOption[]>([])
   const [levelId, setLevelId] = useState<number | "">("")
   const [classId, setClassId] = useState<number | "">("")
   const [subjectId, setSubjectId] = useState<number | "">("")
+  const [examPeriodId, setExamPeriodId] = useState<number | "">("")
   const [editingStudentId, setEditingStudentId] = useState<number | null>(null)
   const [marksByStudent, setMarksByStudent] = useState<Record<number, string>>({})
   const [saving, setSaving] = useState(false)
@@ -120,6 +130,20 @@ export default function TeacherMarksPage() {
       }
     }
     void load()
+  }, [])
+
+  useEffect(() => {
+    const loadExamPeriods = async () => {
+      try {
+        const response = (await apiFetch("/manager/exams-period")) as {
+          data?: ExamPeriodOption[]
+        }
+        setExamPeriods(Array.isArray(response?.data) ? response.data : [])
+      } catch {
+        setExamPeriods([])
+      }
+    }
+    void loadExamPeriods()
   }, [])
 
   useEffect(() => {
@@ -144,12 +168,14 @@ export default function TeacherMarksPage() {
 
   useEffect(() => {
     const loadMarks = async () => {
-      if (!classId || !subjectId) {
+      if (!classId || !subjectId || !examPeriodId) {
         setMarksByStudent({})
         return
       }
       try {
-        const response = (await apiFetch(`/teacher/marks?class_id=${classId}&subject_id=${subjectId}`)) as {
+        const response = (await apiFetch(
+          `/teacher/marks?class_id=${classId}&subject_id=${subjectId}&exam_period_id=${examPeriodId}`,
+        )) as {
           data?: { student_id: number; degree: number }[]
         }
         if (!Array.isArray(response?.data)) {
@@ -166,7 +192,7 @@ export default function TeacherMarksPage() {
       }
     }
     void loadMarks()
-  }, [classId, subjectId])
+  }, [classId, subjectId, examPeriodId])
 
   const levels = useMemo(() => {
     const map = new Map<number, string>()
@@ -205,6 +231,9 @@ export default function TeacherMarksPage() {
   const totalDegreeValue = selectedSubject?.total_degree ?? "-"
 
   const tableRows: MarkRow[] = useMemo(() => {
+    if (!examPeriodId) {
+      return []
+    }
     if (students.length > 0) {
       return students.map((student) => ({
         id: student.id,
@@ -221,12 +250,13 @@ export default function TeacherMarksPage() {
       score: "-",
       placeholder: true,
     }))
-  }, [students, totalDegreeValue, marksByStudent])
+  }, [students, totalDegreeValue, marksByStudent, examPeriodId])
 
   const handleLevelChange = (value: number | "") => {
     setLevelId(value)
     setClassId("")
     setSubjectId("")
+    setExamPeriodId("")
     setEditingStudentId(null)
     setMarksByStudent({})
     setSaveError(null)
@@ -236,6 +266,7 @@ export default function TeacherMarksPage() {
   const handleClassChange = (value: number | "") => {
     setClassId(value)
     setSubjectId("")
+    setExamPeriodId("")
     setEditingStudentId(null)
     setMarksByStudent({})
     setSaveError(null)
@@ -244,7 +275,16 @@ export default function TeacherMarksPage() {
 
   const handleSubjectChange = (value: number | "") => {
     setSubjectId(value)
+    setExamPeriodId("")
     setEditingStudentId(null)
+    setSaveError(null)
+    setSaveSuccess(null)
+  }
+
+  const handleExamPeriodChange = (value: number | "") => {
+    setExamPeriodId(value)
+    setEditingStudentId(null)
+    setMarksByStudent({})
     setSaveError(null)
     setSaveSuccess(null)
   }
@@ -254,7 +294,7 @@ export default function TeacherMarksPage() {
   }
 
   const handleSave = async () => {
-    if (!subjectId || !classId) return
+    if (!subjectId || !classId || !examPeriodId) return
     const payloadMarks = Object.entries(marksByStudent)
       .filter(([, value]) => value !== "")
       .map(([studentId, value]) => ({
@@ -277,6 +317,7 @@ export default function TeacherMarksPage() {
         body: JSON.stringify({
           subject_id: subjectId,
           class_id: classId,
+          exam_period_id: examPeriodId,
           marks: payloadMarks,
         }),
       })
@@ -310,6 +351,9 @@ export default function TeacherMarksPage() {
         <SidebarContent>
           <NavMain items={teacherNav} />
         </SidebarContent>
+        <SidebarFooter>
+          <TeacherSidebarFooter />
+        </SidebarFooter>
       </Sidebar>
       <SidebarInset className="bg-white text-[var(--color-text)]">
         <header className="group-has-data-[collapsible=icon]/sidebar-wrapper:h-12 flex h-12 shrink-0 items-center gap-2 border-b transition-[width,height] ease-linear">
@@ -322,10 +366,10 @@ export default function TeacherMarksPage() {
             <div className="flex flex-col gap-4 py-4 md:gap-6 md:py-6">
               <div className="px-4 lg:px-6">
                 <div className="rounded-2xl border border-slate-100 bg-white p-5 shadow-sm">
-                  <div className="grid gap-4 md:grid-cols-3">
-                    <div className="flex flex-col gap-2">
-                      <span className="text-xs font-medium text-slate-500">المرحلة</span>
-                      <select
+                <div className="grid gap-4 md:grid-cols-4">
+                  <div className="flex flex-col gap-2">
+                    <span className="text-xs font-medium text-slate-500">المرحلة</span>
+                    <select
                         className="h-10 rounded-xl border border-slate-200 bg-white px-3 text-sm text-slate-700 outline-none transition focus-visible:border-[var(--color-accent)] focus-visible:ring-2 focus-visible:ring-[rgba(170,196,245,0.45)]"
                         value={levelId}
                         onChange={(event) =>
@@ -339,10 +383,10 @@ export default function TeacherMarksPage() {
                             {level.name}
                           </option>
                         ))}
-                      </select>
-                    </div>
-                    <div className="flex flex-col gap-2">
-                      <span className="text-xs font-medium text-slate-500">الصف</span>
+                    </select>
+                  </div>
+                  <div className="flex flex-col gap-2">
+                    <span className="text-xs font-medium text-slate-500">الصف</span>
                       <select
                         className="h-10 rounded-xl border border-slate-200 bg-white px-3 text-sm text-slate-700 outline-none transition focus-visible:border-[var(--color-accent)] focus-visible:ring-2 focus-visible:ring-[rgba(170,196,245,0.45)]"
                         value={classId}
@@ -357,10 +401,10 @@ export default function TeacherMarksPage() {
                             {schoolClass.name}
                           </option>
                         ))}
-                      </select>
-                    </div>
-                    <div className="flex flex-col gap-2">
-                      <span className="text-xs font-medium text-slate-500">المادة</span>
+                    </select>
+                  </div>
+                  <div className="flex flex-col gap-2">
+                    <span className="text-xs font-medium text-slate-500">المادة</span>
                       <select
                         className="h-10 rounded-xl border border-slate-200 bg-white px-3 text-sm text-slate-700 outline-none transition focus-visible:border-[var(--color-accent)] focus-visible:ring-2 focus-visible:ring-[rgba(170,196,245,0.45)]"
                         value={subjectId}
@@ -375,64 +419,91 @@ export default function TeacherMarksPage() {
                             {subject.name}
                           </option>
                         ))}
-                      </select>
-                    </div>
+                    </select>
                   </div>
+                  <div className="flex flex-col gap-2">
+                    <span className="text-xs font-medium text-slate-500">فترة الامتحان</span>
+                    <select
+                      className="h-10 rounded-xl border border-slate-200 bg-white px-3 text-sm text-slate-700 outline-none transition focus-visible:border-[var(--color-accent)] focus-visible:ring-2 focus-visible:ring-[rgba(170,196,245,0.45)]"
+                      value={examPeriodId}
+                      onChange={(event) =>
+                        handleExamPeriodChange(
+                          event.target.value ? Number(event.target.value) : "",
+                        )
+                      }
+                      aria-label="اختر فترة الامتحان"
+                      disabled={!subjectId}
+                    >
+                      <option value="">اختر الفترة</option>
+                      {examPeriods.map((period) => (
+                        <option key={period.id} value={period.id}>
+                          {period.exam_name} - {period.exam_year}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                </div>
                 </div>
 
                 <div className="mt-5 w-full max-w-[780px] rounded-2xl border border-slate-100 bg-white p-4 shadow-sm">
-                  <div className="flex h-[360px] flex-col">
-                    <div className="grid grid-cols-[1.35fr_0.95fr_1.15fr_0.85fr] gap-3">
-                      {markHeaders.map((header) => (
-                        <div
-                          key={header}
-                          className="flex h-9 items-center justify-center rounded-lg bg-[var(--color-surface-alt)] text-xs font-semibold text-slate-700"
-                        >
-                          {header}
-                        </div>
-                      ))}
+                  {!examPeriodId ? (
+                    <div className="flex h-[360px] items-center justify-center text-sm text-slate-500">
+                      اختر فترة الامتحان لعرض الدرجات.
                     </div>
-                    <div className="mt-3 flex-1 overflow-y-auto border-t border-slate-200">
-                      {tableRows.map((row, index) => (
-                        <div
-                          key={`mark-row-${index}`}
-                          className={`grid min-h-[40px] grid-cols-[1.35fr_0.95fr_1.15fr_0.85fr] border-b border-slate-200 text-xs text-slate-700 ${
-                            row.placeholder ? "" : "cursor-pointer hover:bg-[var(--color-surface-alt)]"
-                          }`}
-                          onClick={() => {
-                            if (!row.placeholder && row.id && subjectId) {
-                              setEditingStudentId(row.id)
-                            }
-                          }}
-                        >
-                          <div className="flex items-center justify-center border-l border-slate-200">
-                            {row.name}
+                  ) : (
+                    <div className="flex h-[360px] flex-col">
+                      <div className="grid grid-cols-[1.35fr_0.95fr_1.15fr_0.85fr] gap-3">
+                        {markHeaders.map((header) => (
+                          <div
+                            key={header}
+                            className="flex h-9 items-center justify-center rounded-lg bg-[var(--color-surface-alt)] text-xs font-semibold text-slate-700"
+                          >
+                            {header}
                           </div>
-                          <div className="flex items-center justify-center border-l border-slate-200">
-                            {row.full}
+                        ))}
+                      </div>
+                      <div className="mt-3 flex-1 overflow-y-auto border-t border-slate-200">
+                        {tableRows.map((row, index) => (
+                          <div
+                            key={`mark-row-${index}`}
+                            className={`grid min-h-[40px] grid-cols-[1.35fr_0.95fr_1.15fr_0.85fr] border-b border-slate-200 text-xs text-slate-700 ${
+                              row.placeholder ? "" : "cursor-pointer hover:bg-[var(--color-surface-alt)]"
+                            }`}
+                            onClick={() => {
+                              if (!row.placeholder && row.id && subjectId) {
+                                setEditingStudentId(row.id)
+                              }
+                            }}
+                          >
+                            <div className="flex items-center justify-center border-l border-slate-200">
+                              {row.name}
+                            </div>
+                            <div className="flex items-center justify-center border-l border-slate-200">
+                              {row.full}
+                            </div>
+                            <div className="flex items-center justify-center border-l border-slate-200">
+                              {row.participation}
+                            </div>
+                            <div className="flex items-center justify-center">
+                              {!row.placeholder && row.id && editingStudentId === row.id && subjectId ? (
+                                <input
+                                  type="number"
+                                  min={0}
+                                  max={selectedSubject?.total_degree ?? undefined}
+                                  className="h-8 w-20 rounded-lg border border-slate-200 bg-white px-2 text-center text-xs text-slate-700 outline-none transition focus-visible:border-[var(--color-accent)] focus-visible:ring-2 focus-visible:ring-[rgba(170,196,245,0.45)]"
+                                  value={marksByStudent[row.id] ?? ""}
+                                  onChange={(event) => handleMarkChange(row.id!, event.target.value)}
+                                  onClick={(event) => event.stopPropagation()}
+                                />
+                              ) : (
+                                row.score
+                              )}
+                            </div>
                           </div>
-                          <div className="flex items-center justify-center border-l border-slate-200">
-                            {row.participation}
-                          </div>
-                          <div className="flex items-center justify-center">
-                            {!row.placeholder && row.id && editingStudentId === row.id && subjectId ? (
-                              <input
-                                type="number"
-                                min={0}
-                                max={selectedSubject?.total_degree ?? undefined}
-                                className="h-8 w-20 rounded-lg border border-slate-200 bg-white px-2 text-center text-xs text-slate-700 outline-none transition focus-visible:border-[var(--color-accent)] focus-visible:ring-2 focus-visible:ring-[rgba(170,196,245,0.45)]"
-                                value={marksByStudent[row.id] ?? ""}
-                                onChange={(event) => handleMarkChange(row.id!, event.target.value)}
-                                onClick={(event) => event.stopPropagation()}
-                              />
-                            ) : (
-                              row.score
-                            )}
-                          </div>
-                        </div>
-                      ))}
+                        ))}
+                      </div>
                     </div>
-                  </div>
+                  )}
                 </div>
 
                 <div className="mt-4 flex flex-wrap items-center gap-3">
@@ -440,7 +511,7 @@ export default function TeacherMarksPage() {
                     type="button"
                     className="h-10 rounded-xl bg-[var(--color-sidebar-bg)] px-6 text-sm text-white transition hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-60"
                     onClick={handleSave}
-                    disabled={!subjectId || !classId || saving}
+                    disabled={!subjectId || !classId || !examPeriodId || saving}
                   >
                     {saving ? "جارٍ الحفظ..." : "حفظ الدرجات"}
                   </button>

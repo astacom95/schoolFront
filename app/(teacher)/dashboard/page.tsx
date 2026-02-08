@@ -16,6 +16,7 @@ import {
   Sidebar,
   SidebarContent,
   SidebarHeader,
+  SidebarFooter,
   SidebarInset,
   SidebarMenu,
   SidebarMenuButton,
@@ -26,6 +27,7 @@ import { NavMain } from "@/components/nav-main"
 import { SectionCards } from "@/components/section-cards"
 import { TeacherAttendancePie } from "@/components/teacher-attendance-pie"
 import { apiFetch } from "@/lib/api/client"
+import { TeacherSidebarFooter } from "@/components/teacher-sidebar-footer"
 
 const teacherNav = [
   {
@@ -118,14 +120,6 @@ const teacherCards = [
   },
 ]
 
-const teacherPlanRows = [
-  { label: "الانجليزي", value: 100 },
-  { label: "رياضيات", value: 75 },
-  { label: "عربي", value: 50 },
-  { label: "فيزياء", value: 25 },
-  { label: "تاريخ", value: 0 },
-]
-
 const timetableSlots = [
   { label: "الاولى", start: "08:00", end: "09:00" },
   { label: "الثانية", start: "09:00", end: "10:00" },
@@ -155,8 +149,18 @@ type TimetableEntry = {
   subject_name?: string | null
 }
 
+type SubjectPlanRow = {
+  id: number
+  name: string
+  total_lessons?: number | null
+  recorded_lessons?: number | null
+}
+
 export default function TeacherDashboard() {
   const [timetableEntries, setTimetableEntries] = useState<TimetableEntry[]>([])
+  const [teacherPlanRows, setTeacherPlanRows] = useState<
+    { id: number; label: string; value: number }[]
+  >([])
 
   useEffect(() => {
     const loadTimetable = async () => {
@@ -168,6 +172,30 @@ export default function TeacherDashboard() {
       }
     }
     void loadTimetable()
+  }, [])
+
+  useEffect(() => {
+    const loadPlan = async () => {
+      try {
+        const response = (await apiFetch("/teacher/subjects")) as { data?: SubjectPlanRow[] }
+        const rows = Array.isArray(response?.data) ? response.data : []
+        const mapped = rows.map((subject) => {
+          const totalLessons = Number(subject.total_lessons ?? 0)
+          const recordedLessons = Number(subject.recorded_lessons ?? 0)
+          const percent =
+            totalLessons > 0 ? Math.min(100, Math.round((recordedLessons / totalLessons) * 100)) : 0
+          return {
+            id: subject.id,
+            label: subject.name,
+            value: percent,
+          }
+        })
+        setTeacherPlanRows(mapped)
+      } catch {
+        setTeacherPlanRows([])
+      }
+    }
+    void loadPlan()
   }, [])
 
   const todayEnglish = new Intl.DateTimeFormat("en", { weekday: "long" }).format(new Date())
@@ -261,6 +289,9 @@ export default function TeacherDashboard() {
         <SidebarContent>
           <NavMain items={teacherNav} />
         </SidebarContent>
+        <SidebarFooter>
+          <TeacherSidebarFooter />
+        </SidebarFooter>
       </Sidebar>
       <SidebarInset className="bg-white text-[var(--color-text)]">
         <header className="group-has-data-[collapsible=icon]/sidebar-wrapper:h-12 flex h-12 shrink-0 items-center gap-2 border-b transition-[width,height] ease-linear">
@@ -278,18 +309,22 @@ export default function TeacherDashboard() {
                     <h3 className="text-sm font-semibold">الخطة الدراسية</h3>
                   </div>
                   <div className="flex flex-col gap-4">
-                    {teacherPlanRows.map((row) => (
-                      <div key={row.label} className="grid grid-cols-[80px_1fr_40px] items-center gap-3">
-                        <span className="text-[11px] text-black text-center">{row.label}</span>
-                        <div className="relative h-3 rounded-full bg-[#B0D2DE] overflow-hidden">
-                          <div
-                            className="absolute inset-y-0 right-0 rounded-full bg-[#4EE8D0]"
-                            style={{ width: `${row.value}%` }}
-                          />
+                    {teacherPlanRows.length > 0 ? (
+                      teacherPlanRows.map((row) => (
+                        <div key={row.id} className="grid grid-cols-[80px_1fr_40px] items-center gap-3">
+                          <span className="text-[11px] text-black text-center">{row.label}</span>
+                          <div className="relative h-3 rounded-full bg-[#B0D2DE] overflow-hidden">
+                            <div
+                              className="absolute inset-y-0 right-0 rounded-full bg-[#4EE8D0]"
+                              style={{ width: `${row.value}%` }}
+                            />
+                          </div>
+                          <span className="text-[11px] text-black text-center">{row.value}%</span>
                         </div>
-                        <span className="text-[11px] text-black text-center">{row.value}%</span>
-                      </div>
-                    ))}
+                      ))
+                    ) : (
+                      <div className="text-xs text-slate-500">لا توجد مواد لعرض الخطة.</div>
+                    )}
                   </div>
                 </div>
                 <TeacherAttendancePie />

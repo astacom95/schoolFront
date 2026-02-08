@@ -35,17 +35,12 @@ type SubjectOption = {
   class?: string | null
 }
 
-type PaperWorkItem = {
-  id: number
-  paper_path: string
-  paper_url?: string | null
-  subject_id: number
-  subject_name?: string | null
-  level_id: number
-  level_name?: string | null
-  class_id: number
-  class_name?: string | null
-  created_at?: string | null
+type AttendanceRow = {
+  student_id: number
+  student_name: string
+  attendance_count: number
+  recorded_lessons: number
+  attendance_percent: number
 }
 
 const teacherNav = [
@@ -91,22 +86,24 @@ const teacherNav = [
   },
 ]
 
-export default function TeacherPaperWorkPage() {
-  const apiBaseUrl =
-    process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:8000/api"
-  const fileBaseUrl = apiBaseUrl.replace(/\/api\/?$/, "")
+const attendanceHeaders = [
+  "اسم الطالب",
+  "عدد الحضور",
+  "الدروس المسجلة",
+  "نسبة الحضور",
+]
+
+export default function TeacherAttendancePage() {
   const [subjects, setSubjects] = useState<SubjectOption[]>([])
-  const [papers, setPapers] = useState<PaperWorkItem[]>([])
   const [levelId, setLevelId] = useState<number | "">("")
   const [classId, setClassId] = useState<number | "">("")
   const [subjectId, setSubjectId] = useState<number | "">("")
-  const [paperFile, setPaperFile] = useState<File | null>(null)
-  const [uploading, setUploading] = useState(false)
-  const [uploadError, setUploadError] = useState<string | null>(null)
-  const [uploadSuccess, setUploadSuccess] = useState<string | null>(null)
+  const [rows, setRows] = useState<AttendanceRow[]>([])
+  const [recordedLessons, setRecordedLessons] = useState(0)
+  const [loadError, setLoadError] = useState<string | null>(null)
 
   useEffect(() => {
-    const loadSubjects = async () => {
+    const load = async () => {
       try {
         const response = (await apiFetch("/teacher/subjects")) as { data?: SubjectOption[] }
         setSubjects(Array.isArray(response?.data) ? response.data : [])
@@ -114,27 +111,39 @@ export default function TeacherPaperWorkPage() {
         setSubjects([])
       }
     }
-    void loadSubjects()
+    void load()
   }, [])
 
-  const loadPapers = async () => {
-    try {
-      const params = new URLSearchParams()
-      if (levelId) params.set("level_id", String(levelId))
-      if (classId) params.set("class_id", String(classId))
-      if (subjectId) params.set("subject_id", String(subjectId))
-      const response = (await apiFetch(`/teacher/papers-work?${params.toString()}`)) as {
-        data?: PaperWorkItem[]
-      }
-      setPapers(Array.isArray(response?.data) ? response.data : [])
-    } catch {
-      setPapers([])
-    }
-  }
-
   useEffect(() => {
-    void loadPapers()
-  }, [levelId, classId, subjectId])
+    const loadAttendance = async () => {
+      if (!subjectId) {
+        setRows([])
+        setRecordedLessons(0)
+        setLoadError(null)
+        return
+      }
+
+      const params = new URLSearchParams()
+      params.set("subject_id", String(subjectId))
+      if (classId) params.set("class_id", String(classId))
+      if (levelId) params.set("level_id", String(levelId))
+
+      try {
+        const response = (await apiFetch(`/teacher/attendance?${params.toString()}`)) as {
+          data?: { students?: AttendanceRow[]; recorded_lessons?: number }
+        }
+        const students = Array.isArray(response?.data?.students) ? response.data.students : []
+        setRows(students)
+        setRecordedLessons(Number(response?.data?.recorded_lessons ?? 0))
+        setLoadError(null)
+      } catch (error) {
+        setRows([])
+        setRecordedLessons(0)
+        setLoadError(error instanceof Error ? error.message : "تعذر تحميل بيانات الحضور.")
+      }
+    }
+    void loadAttendance()
+  }, [subjectId, classId, levelId])
 
   const levels = useMemo(() => {
     const map = new Map<number, string>()
@@ -169,61 +178,24 @@ export default function TeacherPaperWorkPage() {
     setLevelId(value)
     setClassId("")
     setSubjectId("")
+    setRows([])
+    setRecordedLessons(0)
+    setLoadError(null)
   }
 
   const handleClassChange = (value: number | "") => {
     setClassId(value)
     setSubjectId("")
+    setRows([])
+    setRecordedLessons(0)
+    setLoadError(null)
   }
 
-  const handleUpload = async () => {
-    if (!paperFile || !levelId || !classId || !subjectId) {
-      setUploadError("اختر المرحلة والصف والمادة وحدد الملف قبل الرفع.")
-      setUploadSuccess(null)
-      return
-    }
-
-    try {
-      setUploading(true)
-      setUploadError(null)
-      setUploadSuccess(null)
-      const formData = new FormData()
-      formData.append("paper_file", paperFile)
-      formData.append("level_id", String(levelId))
-      formData.append("class_id", String(classId))
-      formData.append("subject_id", String(subjectId))
-
-      const token =
-        typeof window !== "undefined" ? window.localStorage.getItem("authToken") : null
-
-      const response = await fetch(`${apiBaseUrl}/teacher/papers-work`, {
-        method: "POST",
-        headers: {
-          ...(token ? { Authorization: `Bearer ${token}` } : {}),
-        },
-        body: formData,
-      })
-
-      if (!response.ok) {
-        let message = "تعذر رفع ورقة العمل."
-        try {
-          const errorData = await response.json()
-          if (errorData?.message) message = errorData.message
-        } catch {
-          // ignore parsing errors
-        }
-        throw new Error(message)
-      }
-
-      setPaperFile(null)
-      setUploadSuccess("تمت إضافة ورقة العمل بنجاح.")
-      await loadPapers()
-    } catch (error) {
-      setUploadError(error instanceof Error ? error.message : "تعذر رفع ورقة العمل.")
-      setUploadSuccess(null)
-    } finally {
-      setUploading(false)
-    }
+  const handleSubjectChange = (value: number | "") => {
+    setSubjectId(value)
+    setRows([])
+    setRecordedLessons(0)
+    setLoadError(null)
   }
 
   return (
@@ -254,7 +226,7 @@ export default function TeacherPaperWorkPage() {
       <SidebarInset className="bg-white text-[var(--color-text)]">
         <header className="group-has-data-[collapsible=icon]/sidebar-wrapper:h-12 flex h-12 shrink-0 items-center gap-2 border-b transition-[width,height] ease-linear">
           <div className="flex w-full items-center gap-1 px-4 lg:gap-2 lg:px-6">
-            <h1 className="text-base font-medium">أوراق العمل</h1>
+            <h1 className="text-base font-medium">حضور الطلاب</h1>
           </div>
         </header>
         <div className="flex flex-1 flex-col">
@@ -290,11 +262,12 @@ export default function TeacherPaperWorkPage() {
                           handleClassChange(event.target.value ? Number(event.target.value) : "")
                         }
                         aria-label="اختر الصف"
+                        disabled={!levelId}
                       >
                         <option value="">اختر الصف</option>
-                        {classes.map((schoolClass) => (
-                          <option key={schoolClass.id} value={schoolClass.id}>
-                            {schoolClass.name}
+                        {classes.map((classItem) => (
+                          <option key={classItem.id} value={classItem.id}>
+                            {classItem.name}
                           </option>
                         ))}
                       </select>
@@ -305,9 +278,10 @@ export default function TeacherPaperWorkPage() {
                         className="h-10 rounded-xl border border-slate-200 bg-white px-3 text-sm text-slate-700 outline-none transition focus-visible:border-[var(--color-accent)] focus-visible:ring-2 focus-visible:ring-[rgba(170,196,245,0.45)]"
                         value={subjectId}
                         onChange={(event) =>
-                          setSubjectId(event.target.value ? Number(event.target.value) : "")
+                          handleSubjectChange(event.target.value ? Number(event.target.value) : "")
                         }
                         aria-label="اختر المادة"
+                        disabled={!classId}
                       >
                         <option value="">اختر المادة</option>
                         {filteredSubjects.map((subject) => (
@@ -319,87 +293,44 @@ export default function TeacherPaperWorkPage() {
                     </div>
                   </div>
 
-                  <div className="mt-5 rounded-2xl border border-dashed border-slate-300 bg-[var(--color-surface-alt)] p-6 text-center">
-                    <label className="flex cursor-pointer flex-col items-center gap-2 text-sm text-slate-600">
-                      <input
-                        type="file"
-                        className="hidden"
-                        accept=".pdf,.jpg,.jpeg,.png,.webp"
-                        onChange={(event) => setPaperFile(event.target.files?.[0] ?? null)}
-                      />
-                      <span className="text-sm font-medium text-slate-700">
-                        {paperFile ? paperFile.name : "اسحب ملف ورقة العمل هنا أو اضغط للاختيار"}
-                      </span>
-                      <span className="text-xs text-slate-500">PDF أو صورة، بحد أقصى 20MB</span>
-                    </label>
+                  <div className="mt-6 rounded-2xl border border-slate-100 bg-[#F8FAFC] px-4 py-3 text-sm text-slate-600">
+                    {subjectId
+                      ? `عدد الدروس المسجلة لهذا المقرر: ${recordedLessons}`
+                      : "اختر مادة لعرض سجل الحضور."}
                   </div>
 
-                  <div className="mt-5 flex items-center justify-between">
-                    <span className="text-xs text-slate-500">
-                      سيتم رفع الملف وربطه بالمادة المحددة.
-                    </span>
-                    <button
-                      type="button"
-                      className="h-10 rounded-xl bg-[var(--color-sidebar-bg)] px-6 text-sm text-white transition hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-60"
-                      onClick={handleUpload}
-                      disabled={uploading}
-                    >
-                      {uploading ? "جارٍ الرفع..." : "رفع ورقة العمل"}
-                    </button>
-                  </div>
-                </div>
-
-                {uploadError ? <div className="mt-4 text-sm text-red-600">{uploadError}</div> : null}
-                {uploadSuccess ? <div className="mt-4 text-sm text-green-600">{uploadSuccess}</div> : null}
-                <div className="rounded-2xl bg-white p-4 shadow-sm border border-slate-100">
-                  <div className="overflow-x-auto">
+                  <div className="mt-6 overflow-hidden rounded-2xl border border-slate-100">
                     <table className="w-full text-sm">
-                      <thead>
-                        <tr className="bg-[#EAF6FC] text-black">
-                          <th className="px-3 py-2 text-right font-semibold">المادة</th>
-                          <th className="px-3 py-2 text-right font-semibold">المرحلة</th>
-                          <th className="px-3 py-2 text-right font-semibold">الصف</th>
-                          <th className="px-3 py-2 text-right font-semibold">الملف</th>
-                          <th className="px-3 py-2 text-right font-semibold">التاريخ</th>
+                      <thead className="bg-[#E9F0FF] text-slate-700">
+                        <tr>
+                          {attendanceHeaders.map((header) => (
+                            <th key={header} className="px-4 py-3 text-right text-xs font-semibold">
+                              {header}
+                            </th>
+                          ))}
                         </tr>
                       </thead>
                       <tbody>
-                        {papers.length === 0 ? (
+                        {rows.length > 0 ? (
+                          rows.map((row) => (
+                            <tr key={row.student_id} className="border-b border-slate-100">
+                              <td className="px-4 py-3 text-slate-700">{row.student_name}</td>
+                              <td className="px-4 py-3 text-slate-600">{row.attendance_count}</td>
+                              <td className="px-4 py-3 text-slate-600">{row.recorded_lessons}</td>
+                              <td className="px-4 py-3 text-slate-600">
+                                {row.attendance_percent}%
+                              </td>
+                            </tr>
+                          ))
+                        ) : (
                           <tr>
-                            <td className="px-3 py-4 text-center text-slate-500" colSpan={5}>
-                              لا توجد أوراق عمل مطابقة للفلاتر المختارة.
+                            <td
+                              colSpan={attendanceHeaders.length}
+                              className="px-4 py-6 text-center text-sm text-slate-500"
+                            >
+                              {loadError ?? "لا توجد بيانات حضور لعرضها حالياً."}
                             </td>
                           </tr>
-                        ) : (
-                          papers.map((paper) => {
-                            const rawUrl = paper.paper_url ?? ""
-                            const fileUrl =
-                              rawUrl && rawUrl.startsWith("/storage")
-                                ? `${fileBaseUrl}${rawUrl}`
-                                : rawUrl
-                            return (
-                              <tr key={paper.id} className="border-b border-slate-200">
-                                <td className="px-3 py-2">{paper.subject_name ?? "-"}</td>
-                                <td className="px-3 py-2">{paper.level_name ?? "-"}</td>
-                                <td className="px-3 py-2">{paper.class_name ?? "-"}</td>
-                                <td className="px-3 py-2">
-                                  {fileUrl ? (
-                                    <a
-                                      href={fileUrl}
-                                      className="text-blue-600 underline"
-                                      target="_blank"
-                                      rel="noreferrer"
-                                    >
-                                      فتح الملف
-                                    </a>
-                                  ) : (
-                                    paper.paper_path ?? "-"
-                                  )}
-                                </td>
-                                <td className="px-3 py-2">{paper.created_at ?? "-"}</td>
-                              </tr>
-                            )
-                          })
                         )}
                       </tbody>
                     </table>

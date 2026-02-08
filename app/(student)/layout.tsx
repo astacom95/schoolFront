@@ -1,12 +1,15 @@
 "use client"
 
 import type { ReactNode } from "react"
+import { useEffect, useState } from "react"
 
 import { NavMain } from "@/components/nav-main"
+import { NavUser } from "@/components/nav-user"
 import {
   Sidebar,
   SidebarContent,
   SidebarHeader,
+  SidebarFooter,
   SidebarInset,
   SidebarMenu,
   SidebarMenuButton,
@@ -21,6 +24,7 @@ import {
   LayersIcon,
   VideoIcon,
 } from "lucide-react"
+import { apiFetch } from "@/lib/api/client"
 
 const studentNav = [
   {
@@ -54,21 +58,37 @@ const studentNav = [
     icon: BookOpenIcon,
   },
   
-    {
+  {
     title: "الدرجات و النتائج",
-    url: "#",
+    url: "/student/results",
     icon: BookOpenIcon,
   },
    
-    {
-    title: "الملف الشخصي",
-    url: "#",
-    icon: BookOpenIcon,
-  },
+   
    
 ]
 
 export default function StudentLayout({ children }: { children: ReactNode }) {
+  const [profile, setProfile] = useState<{
+    full_name?: string | null
+    email?: string | null
+    personal_image_url?: string | null
+  } | null>(null)
+
+  useEffect(() => {
+    const loadProfile = async () => {
+      try {
+        const res = (await apiFetch("/student/profile")) as {
+          data?: { full_name?: string; email?: string; personal_image_url?: string }
+        }
+        setProfile(res?.data ?? null)
+      } catch {
+        setProfile(null)
+      }
+    }
+    void loadProfile()
+  }, [])
+
   return (
     <SidebarProvider>
       <Sidebar side="right" variant="inset" collapsible="offcanvas">
@@ -87,6 +107,15 @@ export default function StudentLayout({ children }: { children: ReactNode }) {
         <SidebarContent>
           <NavMain items={studentNav} />
         </SidebarContent>
+        <SidebarFooter>
+          <NavUser
+            user={{
+              name: profile?.full_name ?? "طالب",
+              email: profile?.email ?? "—",
+              avatar: profile?.personal_image_url ?? "",
+            }}
+          />
+        </SidebarFooter>
       </Sidebar>
       <SidebarInset className="bg-white text-[var(--color-text)]">
         <header className="group-has-data-[collapsible=icon]/sidebar-wrapper:h-12 flex h-12 shrink-0 items-center gap-2 border-b transition-[width,height] ease-linear">

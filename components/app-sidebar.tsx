@@ -78,34 +78,30 @@ const data = {
       url: "/manager/fees",
       icon: WalletIcon,
     },
-    {
-      title: "القاعة",
-      url: "#",
-      icon: BarChartIcon,
-    },
+ 
     {
       title: "ملخصات",
-      url: "#",
+      url: "/manager/summaries",
       icon: LayersIcon,
     },
     {
       title: "تدريبات",
-      url: "#",
+      url: "/manager/quizzes",
       icon: ListChecksIcon,
     },
     {
       title: "اوراق عمل",
-      url: "#",
+      url: "/manager/papers-work",
       icon: FileTextIcon,
     },
     {
       title: "امتحانات",
-      url: "#",
+      url: "/manager/exams-period",
       icon: ClipboardListIcon,
     },
     {
-      title: "الدروس المسجلة",
-      url: "#",
+      title: "متابعة المعلمين",
+      url: "/manager/teacher-tracking",
       icon: VideoIcon,
     },
     {
@@ -120,14 +116,10 @@ const data = {
     },
     {
       title: "التقارير",
-      url: "#",
+      url: "/manager/reports",
       icon: FileTextIcon,
     },
-    {
-      title: "الاعدادات",
-      url: "#",
-      icon: SettingsIcon,
-    },
+  
   ],
   navSecondary: [
     {
