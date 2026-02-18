@@ -1,6 +1,7 @@
 "use client"
 
 import { Fragment, useEffect, useMemo, useState } from "react"
+import { useRouter } from "next/navigation"
 import {
   Label,
   PolarAngleAxis,
@@ -10,6 +11,7 @@ import {
   RadialBarChart,
 } from "recharts"
 
+import { Door } from "@/components/door/door"
 import { SectionCards } from "@/components/section-cards"
 import { apiFetch } from "@/lib/api/client"
 import { ChartContainer, type ChartConfig } from "@/components/ui/chart"
@@ -85,6 +87,11 @@ type SubjectRow = {
   id: number
 }
 
+type SubjectLesson = {
+  id: number
+  created_at?: string | null
+}
+
 type AttendanceOverview = {
   average_score?: number | null
   average_percent?: number | null
@@ -98,10 +105,13 @@ const attendanceChartConfig = {
 } satisfies ChartConfig
 
 export default function StudentDashboard() {
+  const router = useRouter()
   const [timetableEntries, setTimetableEntries] = useState<TimetableEntry[]>([])
   const [timetableError, setTimetableError] = useState<string | null>(null)
   const [subjectCount, setSubjectCount] = useState(0)
   const [attendancePercent, setAttendancePercent] = useState(0)
+  const [now, setNow] = useState(() => new Date())
+  const [currentLessonTargetId, setCurrentLessonTargetId] = useState<number | null>(null)
 
   useEffect(() => {
     const loadTimetable = async () => {
@@ -154,14 +164,21 @@ export default function StudentDashboard() {
     void loadAttendanceOverview()
   }, [])
 
+  useEffect(() => {
+    const intervalId = window.setInterval(() => {
+      setNow(new Date())
+    }, 60_000)
+    return () => window.clearInterval(intervalId)
+  }, [])
+
   const studentCards = useMemo(() => {
     return baseStudentCards.map((card) =>
       card.title === "المواد الدراسية" ? { ...card, value: String(subjectCount) } : card,
     )
   }, [subjectCount])
 
-  const todayEnglish = new Intl.DateTimeFormat("en", { weekday: "long" }).format(new Date())
-  const currentMinutes = new Date().getHours() * 60 + new Date().getMinutes()
+  const todayEnglish = new Intl.DateTimeFormat("en", { weekday: "long" }).format(now)
+  const currentMinutes = now.getHours() * 60 + now.getMinutes()
 
   const dayMap: Record<string, string> = {
     السبت: "Saturday",
@@ -235,6 +252,62 @@ export default function StudentDashboard() {
     return [{ name: "attendance", value: attendancePercent, fill: "#39559E" }]
   }, [attendancePercent])
 
+  const currentLesson = useMemo(() => {
+    const todayKey = normalizeDay(todayEnglish)
+    const todayEntries = timetableEntries.filter((entry) => normalizeDay(entry.day) === todayKey)
+    return (
+      todayEntries.find((entry) => {
+        const start = toMinutes(entry.start_time)
+        const end = toMinutes(entry.end_time)
+        return currentMinutes >= start && currentMinutes < end
+      }) ?? null
+    )
+  }, [currentMinutes, timetableEntries, todayEnglish])
+
+  const currentLessonSubject =
+    currentLesson?.subject_name?.trim() ||
+    (currentLesson?.subject_id ? `مادة ${currentLesson.subject_id}` : "لا يوجد درس الآن")
+
+  const currentLessonTime = currentLesson
+    ? `${formatTime(currentLesson.start_time)} - ${formatTime(currentLesson.end_time)}`
+    : "حالياً خارج وقت الحصص"
+
+  useEffect(() => {
+    const currentSubjectId = currentLesson?.subject_id
+    if (!currentSubjectId) {
+      setCurrentLessonTargetId(null)
+      return
+    }
+
+    const loadLatestLesson = async () => {
+      try {
+        const response = (await apiFetch(
+          `/student/lessons?subject_id=${currentSubjectId}`,
+        )) as { data?: SubjectLesson[] }
+        const lessons = Array.isArray(response?.data) ? response.data : []
+        const latest = [...lessons].sort((first, second) => {
+          const firstTime = first.created_at ? new Date(first.created_at).getTime() : 0
+          const secondTime = second.created_at ? new Date(second.created_at).getTime() : 0
+          if (secondTime !== firstTime) return secondTime - firstTime
+          return second.id - first.id
+        })[0]
+        setCurrentLessonTargetId(latest?.id ?? null)
+      } catch {
+        setCurrentLessonTargetId(null)
+      }
+    }
+
+    void loadLatestLesson()
+  }, [currentLesson?.subject_id])
+
+  const handleEnterCurrentLesson = () => {
+    if (currentLessonTargetId) {
+      router.push(`/student/lessons/${currentLessonTargetId}`)
+      return
+    }
+    router.push("/student/lessons")
+  }
+
   return (
     <div className="flex flex-1 flex-col">
       <div className="@container/main flex flex-1 flex-col gap-2">
@@ -242,20 +315,21 @@ export default function StudentDashboard() {
           <SectionCards items={studentCards} />
 
           <div className="px-4 lg:px-6">
-            <div className="flex flex-wrap gap-4">
-              <div className="relative h-[255px] w-[240px] rounded-2xl border border-slate-100 bg-white px-4 pt-3 shadow-sm">
-                <div className="text-center text-xs font-semibold text-black">الحضور والغياب</div>
+            <div className="flex flex-wrap items-start gap-40 mr-20">
+                
                 <div className="relative mt-4 flex h-[170px] w-[200px] items-center justify-center">
-                  <ChartContainer
+                  <div className="mt-20">
+                    <div className="text-center text-lg font-semibold text-black">الحضور والغياب</div>
+ <ChartContainer
                     config={attendanceChartConfig}
-                    className="h-[170px] w-[200px]"
+                    className="h-[240px] w-[240px]"
                   >
                     <RadialBarChart
                       data={attendanceChartData}
                       startAngle={180}
                       endAngle={0}
-                      innerRadius={64}
-                      outerRadius={95}
+                      innerRadius={114}
+                      outerRadius={145}
                       cx="50%"
                       cy="100%"
                     >
@@ -295,11 +369,23 @@ export default function StudentDashboard() {
                       </PolarRadiusAxis>
                     </RadialBarChart>
                   </ChartContainer>
-                </div>
-                <div className="mt-2 text-center text-xs font-semibold text-black">
+                     <div className="mt-2 text-center text-xs font-semibold text-black">
                   نسبة الحضور والغياب اليومي
                 </div>
-              </div>
+                  </div>
+                 
+                </div>
+             
+              
+              <Door
+                subject={currentLessonSubject}
+                timeRange={currentLessonTime}
+                enterLabel="ادخل"
+                isActive={Boolean(currentLesson)}
+                disabled={!currentLesson}
+                className="m-0"
+                onEnter={handleEnterCurrentLesson}
+              />
             </div>
           </div>
 
@@ -333,7 +419,7 @@ export default function StudentDashboard() {
                       entry &&
                       isToday &&
                       currentMinutes >= toMinutes(entry.start_time) &&
-                      currentMinutes <= toMinutes(entry.end_time)
+                      currentMinutes < toMinutes(entry.end_time)
                     return (
                       <div
                         key={`${day.value}-${index}`}
