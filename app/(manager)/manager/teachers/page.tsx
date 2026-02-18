@@ -99,7 +99,7 @@ export default function ManagerTeachersPage() {
                         href={resolveStorageUrl(selectedTeacher.certificate_path, apiBase)}
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="underline text-black"
+                        className="underline text-white"
                       >
                         عرض الوثيقة
                       </a>
@@ -117,7 +117,7 @@ export default function ManagerTeachersPage() {
                         href={resolveStorageUrl(selectedTeacher.cv_path, apiBase)}
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="underline text-black"
+                        className="underline text-white"
                       >
                         عرض السيرة الذاتية
                       </a>
@@ -146,7 +146,7 @@ function InfoTile({
   return (
     <div className={className ?? ""}>
       <div className="text-xs font-semibold mb-1 text-black">{title}</div>
-      <div className="rounded-xl bg-[#c5dfe3] px-4 py-3 text-right text-sm text-black shadow-sm">
+      <div className="rounded-xl bg-[var(--color-sidebar-bg)] px-4 py-3 text-right text-sm text-white shadow-sm">
         <div className="text-[13px] leading-relaxed">{value}</div>
       </div>
     </div>
@@ -160,7 +160,7 @@ function AvatarTile({ src, name, baseUrl }: { src?: string | null; name: string;
   return (
     <div className="flex flex-col">
       <div className="text-xs font-semibold mb-1 text-black">صورة المعلم</div>
-      <div className="h-32 w-32 rounded-xl bg-[#c5dfe3] text-black shadow-sm overflow-hidden flex items-center justify-center">
+      <div className="h-32 w-32 rounded-xl bg-[var(--color-sidebar-bg)] text-white shadow-sm overflow-hidden flex items-center justify-center">
         {safeSrc ? (
           // eslint-disable-next-line @next/next/no-img-element
           <img
