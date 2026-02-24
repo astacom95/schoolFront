@@ -29,7 +29,7 @@ export default function SubjectsPage() {
   const PDF_MAX_BYTES = 100 * 1024 * 1024 // ~100MB to match backend limit
   const IMAGE_MAX_BYTES = 5 * 1024 * 1024 // ~5MB
 
-  const apiBase = (process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000").replace(/\/$/, "")
+  const apiBase = (process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000").replace(/\/+$/, "")
 
   const [levels, setLevels] = useState<LevelOption[]>([])
   const [subjects, setSubjects] = useState<Subject[]>([])
@@ -46,10 +46,21 @@ export default function SubjectsPage() {
   useEffect(() => {
     const load = async () => {
       try {
-        const base = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000"
         const [levelsRes, subjectsRes] = await Promise.all([
-          fetch(`${base}/api/manager/levels`, { cache: "no-store" }),
-          fetch(`${base}/api/manager/subjects`, { cache: "no-store" }),
+          fetch(`${apiBase}/api/manager/levels`, {
+            cache: "no-store",
+            headers: {
+              Accept: "application/json",
+              "X-Requested-With": "XMLHttpRequest",
+            },
+          }),
+          fetch(`${apiBase}/api/manager/subjects`, {
+            cache: "no-store",
+            headers: {
+              Accept: "application/json",
+              "X-Requested-With": "XMLHttpRequest",
+            },
+          }),
         ])
         const levelsJson = await levelsRes.json()
         const subjectsJson = await subjectsRes.json()
@@ -66,7 +77,7 @@ export default function SubjectsPage() {
       }
     }
     void load()
-  }, [])
+  }, [apiBase])
 
   const filteredClasses = useMemo(() => {
     if (!levelId) return []
@@ -107,9 +118,12 @@ export default function SubjectsPage() {
       formData.append("total_degree", String(Number(totalDegree)))
       if (bookPdf) formData.append("book_pdf", bookPdf)
       if (bookThumbnail) formData.append("book_thumbnail", bookThumbnail)
-      const base = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000"
-      const res = await fetch(`${base}/api/manager/subjects`, {
+      const res = await fetch(`${apiBase}/api/manager/subjects`, {
         method: "POST",
+        headers: {
+          Accept: "application/json",
+          "X-Requested-With": "XMLHttpRequest",
+        },
         body: formData,
       })
       let json: any = null
@@ -122,6 +136,10 @@ export default function SubjectsPage() {
         throw new Error("فشل في قراءة استجابة الخادم.")
       }
       if (!res.ok) {
+        if (res.status === 422 && json?.errors && typeof json.errors === "object") {
+          const firstError = Object.values(json.errors).flat().find(Boolean)
+          if (typeof firstError === "string") throw new Error(firstError)
+        }
         throw new Error(json?.message || "فشل حفظ المادة")
       }
       const newSubject = json.data as Subject
