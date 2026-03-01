@@ -19,6 +19,8 @@ export default function ManagerPapersWorkPage() {
   const apiBaseUrl = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000"
   const fileBaseUrl = apiBaseUrl.replace(/\/api\/?$/, "")
   const [papers, setPapers] = useState<PaperWorkItem[]>([])
+  const [selectedClassId, setSelectedClassId] = useState<string>("all")
+  const [selectedSubjectId, setSelectedSubjectId] = useState<string>("all")
 
   useEffect(() => {
     const loadPapers = async () => {
@@ -51,17 +53,98 @@ export default function ManagerPapersWorkPage() {
     })
   }, [papers, fileBaseUrl])
 
+  const classOptions = useMemo(() => {
+    const map = new Map<number, string>()
+
+    papers.forEach((paper) => {
+      if (typeof paper.class_id === "number" && paper.class_name) {
+        map.set(paper.class_id, paper.class_name)
+      }
+    })
+
+    return Array.from(map.entries())
+      .map(([id, name]) => ({ id, name }))
+      .sort((a, b) => a.name.localeCompare(b.name, "ar"))
+  }, [papers])
+
+  const subjectOptions = useMemo(() => {
+    const map = new Map<number, string>()
+
+    papers.forEach((paper) => {
+      const matchesClass = selectedClassId === "all" || String(paper.class_id) === selectedClassId
+      if (matchesClass && typeof paper.subject_id === "number" && paper.subject_name) {
+        map.set(paper.subject_id, paper.subject_name)
+      }
+    })
+
+    return Array.from(map.entries())
+      .map(([id, name]) => ({ id, name }))
+      .sort((a, b) => a.name.localeCompare(b.name, "ar"))
+  }, [papers, selectedClassId])
+
+  useEffect(() => {
+    if (selectedSubjectId === "all") {
+      return
+    }
+
+    const hasSubject = subjectOptions.some((option) => String(option.id) === selectedSubjectId)
+    if (!hasSubject) {
+      setSelectedSubjectId("all")
+    }
+  }, [selectedSubjectId, subjectOptions])
+
+  const filteredPaperCards = useMemo(() => {
+    return paperCards.filter((paper) => {
+      const classMatches = selectedClassId === "all" || String(paper.class_id) === selectedClassId
+      const subjectMatches = selectedSubjectId === "all" || String(paper.subject_id) === selectedSubjectId
+
+      return classMatches && subjectMatches
+    })
+  }, [paperCards, selectedClassId, selectedSubjectId])
+
   return (
     <div className="flex flex-1 flex-col">
       <div className="@container/main flex flex-1 flex-col gap-2">
         <div className="flex flex-col gap-4 py-4 md:gap-6 md:py-6">
           <div className="px-4 lg:px-6">
             <h1 className="text-lg font-semibold">أوراق العمل</h1>
-            {paperCards.length === 0 ? (
-              <div className="card mt-4">لا توجد أوراق عمل متاحة حالياً.</div>
+            <div className="mt-4 grid gap-4 md:grid-cols-2">
+              <div className="flex flex-col gap-1">
+                <label className="text-sm font-medium text-slate-700">تصفية حسب الفصل</label>
+                <select
+                  className="h-10 rounded-md border border-slate-200 px-3 text-sm"
+                  value={selectedClassId}
+                  onChange={(event) => setSelectedClassId(event.target.value)}
+                >
+                  <option value="all">كل الفصول</option>
+                  {classOptions.map((option) => (
+                    <option key={option.id} value={option.id}>
+                      {option.name}
+                    </option>
+                  ))}
+                </select>
+              </div>
+              <div className="flex flex-col gap-1">
+                <label className="text-sm font-medium text-slate-700">تصفية حسب المادة</label>
+                <select
+                  className="h-10 rounded-md border border-slate-200 px-3 text-sm"
+                  value={selectedSubjectId}
+                  onChange={(event) => setSelectedSubjectId(event.target.value)}
+                >
+                  <option value="all">كل المواد</option>
+                  {subjectOptions.map((option) => (
+                    <option key={option.id} value={option.id}>
+                      {option.name}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            </div>
+            {filteredPaperCards.length === 0 ? (
+              <div className="card mt-4">لا توجد أوراق عمل مطابقة للتصفية الحالية.</div>
             ) : (
               <div className="mt-4 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-                {paperCards.map((paper) => (
+                {filteredPaperCards.map((paper) => (
                   <div
                     key={paper.id}
                     className="group rounded-xl border border-slate-100 bg-white p-3 shadow-sm"

@@ -21,6 +21,7 @@ export type StudentRow = {
   phone_number?: string | null
   level?: string | null
   class?: string | null
+  class_id?: number | null
   gender?: string | null
   guardian_name?: string | null
   date_of_birth?: string | null
@@ -45,7 +46,9 @@ type DataTableProps = {
   selectedId?: StudentRow["id"] | null
   onSelectRow?: (row: StudentRow) => void
   showFinanceColumns?: boolean
+  showLevelClassColumns?: boolean
   title?: string
+  printFriendly?: boolean
 }
 
 export function DataTable({
@@ -57,10 +60,13 @@ export function DataTable({
   selectedId = null,
   onSelectRow,
   showFinanceColumns = true,
+  showLevelClassColumns = true,
   title = "قائمة الطلاب",
+  printFriendly = false,
 }: DataTableProps) {
   const [query, setQuery] = useState("")
   const [page, setPage] = useState(1)
+  const [isPrinting, setIsPrinting] = useState(false)
 
   const filtered = useMemo(() => {
     const term = query.trim().toLowerCase()
@@ -95,21 +101,40 @@ export function DataTable({
   const paginatedRows = paginate
     ? filtered.slice((page - 1) * pageSize, (page - 1) * pageSize + pageSize)
     : filtered
+  const visibleRows = printFriendly && isPrinting ? filtered : paginatedRows
+  const columnCount = (showLevelClassColumns ? 6 : 4) + (showFinanceColumns ? 4 : 0)
+
+  useEffect(() => {
+    if (!printFriendly || typeof window === "undefined") return
+
+    const handleBeforePrint = () => setIsPrinting(true)
+    const handleAfterPrint = () => setIsPrinting(false)
+
+    window.addEventListener("beforeprint", handleBeforePrint)
+    window.addEventListener("afterprint", handleAfterPrint)
+
+    return () => {
+      window.removeEventListener("beforeprint", handleBeforePrint)
+      window.removeEventListener("afterprint", handleAfterPrint)
+    }
+  }, [printFriendly])
 
   return (
-    <Card className={cn("p-4", className)}>
-      <div className="flex flex-col gap-3">
-        <div className="flex items-center justify-between gap-3 flex-wrap">
-          <h3 className="text-lg font-semibold">{title}</h3>
-          <div className="flex items-center gap-2 flex-wrap">
-            <Input
-              placeholder="ابحث بالاسم أو البريد أو الرقم"
-              className="max-w-xs"
-              value={query}
-              onChange={(e) => setQuery(e.target.value)}
-            />
+    <Card className={cn("border border-slate-200 shadow-none", className)}>
+      <div className="flex flex-col gap-4 p-4">
+        {!(printFriendly && isPrinting) && (
+          <div className="flex items-center justify-between gap-3 flex-wrap">
+            <h3 className="text-base font-semibold text-slate-900">{title}</h3>
+            <div className="flex items-center gap-2 flex-wrap">
+              <Input
+                placeholder="ابحث بالاسم أو البريد أو الرقم"
+                className="h-9 max-w-xs border-slate-200 bg-white"
+                value={query}
+                onChange={(e) => setQuery(e.target.value)}
+              />
+            </div>
           </div>
-        </div>
+        )}
         <div className="overflow-x-auto">
           <div
             className="overflow-y-auto"
@@ -125,8 +150,12 @@ export function DataTable({
                   <TableHead className="text-right">الاسم الكامل</TableHead>
                   <TableHead className="text-right">البريد</TableHead>
                   <TableHead className="text-right">رقم الهاتف</TableHead>
-                  <TableHead className="text-right">المستوى</TableHead>
-                  <TableHead className="text-right">الفصل</TableHead>
+                  {showLevelClassColumns && (
+                    <>
+                      <TableHead className="text-right">المستوى</TableHead>
+                      <TableHead className="text-right">الفصل</TableHead>
+                    </>
+                  )}
                   <TableHead className="text-right">الجنس</TableHead>
                   {showFinanceColumns && (
                     <>
@@ -139,18 +168,22 @@ export function DataTable({
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {paginatedRows.map((row) => (
+                {visibleRows.map((row) => (
                   <TableRow
                     key={row.id}
-                    className="text-right cursor-pointer transition-colors data-[selected=true]:bg-muted/40 hover:bg-muted/30"
+                    className="text-right cursor-pointer transition-colors data-[selected=true]:bg-slate-100 hover:bg-slate-50"
                     data-selected={selectedId === row.id}
                     onClick={() => onSelectRow?.(row)}
                   >
                     <TableCell className="font-medium">{row.full_name}</TableCell>
                     <TableCell>{row.email || "—"}</TableCell>
                     <TableCell>{row.phone_number || "—"}</TableCell>
-                    <TableCell>{row.level || "—"}</TableCell>
-                    <TableCell>{row.class || "—"}</TableCell>
+                    {showLevelClassColumns && (
+                      <>
+                        <TableCell>{row.level || "—"}</TableCell>
+                        <TableCell>{row.class || "—"}</TableCell>
+                      </>
+                    )}
                     <TableCell>{row.gender || "—"}</TableCell>
                     {showFinanceColumns && (
                       <>
@@ -160,11 +193,11 @@ export function DataTable({
                         <TableCell>
                           {row.remaining_amount !== undefined && row.total_fee !== undefined ? (
                             row.remaining_amount <= 0 ? (
-                              <span className="inline-flex items-center rounded-md bg-green-100 px-2 py-1 text-xs font-semibold text-green-800">
+                              <span className="inline-flex items-center rounded-md bg-emerald-50 px-2 py-1 text-xs font-semibold text-emerald-700">
                                 مكتمل
                               </span>
                             ) : (
-                              <span className="inline-flex items-center rounded-md bg-red-100 px-2 py-1 text-xs font-semibold text-red-800">
+                              <span className="inline-flex items-center rounded-md bg-rose-50 px-2 py-1 text-xs font-semibold text-rose-700">
                                 غير مكتمل
                               </span>
                             )
@@ -176,9 +209,9 @@ export function DataTable({
                     )}
                   </TableRow>
                 ))}
-                {paginatedRows.length === 0 && (
+                {visibleRows.length === 0 && (
                   <TableRow>
-                    <TableCell colSpan={6} className="text-center text-sm text-muted-foreground">
+                    <TableCell colSpan={columnCount} className="text-center text-sm text-muted-foreground">
                       لا توجد بيانات مطابقة
                     </TableCell>
                   </TableRow>
@@ -187,9 +220,9 @@ export function DataTable({
             </Table>
           </div>
         </div>
-        {paginate && (
-          <div className="flex items-center justify-between gap-3 flex-wrap">
-            <span className="text-sm text-muted-foreground">
+        {paginate && !(printFriendly && isPrinting) && (
+          <div className="flex items-center justify-between gap-3 flex-wrap border-t border-slate-200 pt-3">
+            <span className="text-sm text-slate-500">
               صفحة {page} من {pageCount}
             </span>
             <div className="flex items-center gap-2">

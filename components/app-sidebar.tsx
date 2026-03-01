@@ -2,7 +2,6 @@
 
 import * as React from "react"
 import {
-  BarChartIcon,
   BookOpenIcon,
   ClipboardListIcon,
   FileTextIcon,
@@ -17,6 +16,7 @@ import {
   VideoIcon,
   WalletIcon,
 } from "lucide-react"
+import Link from "next/link"
 
 import { NavMain } from "@/components/nav-main"
 import { NavSecondary } from "@/components/nav-secondary"
@@ -26,9 +26,6 @@ import {
   SidebarContent,
   SidebarFooter,
   SidebarHeader,
-  SidebarMenu,
-  SidebarMenuButton,
-  SidebarMenuItem,
 } from "@/components/ui/sidebar"
 
 const data = {
@@ -124,7 +121,7 @@ const data = {
   navSecondary: [
     {
       title: "الإعدادات",
-      url: "#",
+      url: "/manager/settings",
       icon: SettingsIcon,
     },
     {
@@ -140,30 +137,85 @@ const data = {
   ],
 }
 
+type SchoolSetting = {
+  school_name?: string | null
+  school_logo_url?: string | null
+}
+
 export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
+  const [setting, setSetting] = React.useState<SchoolSetting | null>(null)
+
+  React.useEffect(() => {
+    let cancelled = false
+
+    const loadSetting = async () => {
+      try {
+        const base = (process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000").replace(/\/+$/, "")
+        const apiRoot = base.endsWith("/api") ? base : `${base}/api`
+        const res = await fetch(`${apiRoot}/manager/settings`, {
+          cache: "no-store",
+          headers: { Accept: "application/json" },
+        })
+
+        if (!res.ok) {
+          throw new Error("Failed to load settings")
+        }
+
+        const json = await res.json()
+        if (!cancelled) {
+          setSetting((json?.data ?? null) as SchoolSetting | null)
+        }
+      } catch {
+        if (!cancelled) {
+          setSetting(null)
+        }
+      }
+    }
+
+    void loadSetting()
+
+    return () => {
+      cancelled = true
+    }
+  }, [])
+
   return (
     <Sidebar collapsible="offcanvas" {...props}>
       <SidebarHeader>
-        <SidebarMenu>
-          <SidebarMenuItem>
-            <SidebarMenuButton
-              asChild
-              className="data-[slot=sidebar-menu-button]:!p-1.5"
-            >
-              <a href="#">
-                <HomeIcon className="h-5 w-5" />
-                <span className="text-base font-semibold">منصة الإدارة</span>
-              </a>
-            </SidebarMenuButton>
-          </SidebarMenuItem>
-        </SidebarMenu>
+        <Link
+          href="/manager/dashboard"
+          className="flex items-center gap-3 rounded-2xl bg-white px-3 py-3 text-slate-900 shadow-sm"
+        >
+          <div className="flex h-14 w-14 items-center justify-center overflow-hidden rounded-xl shrink-0">
+            {setting?.school_logo_url ? (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img src={setting.school_logo_url} alt={setting.school_name ?? "School logo"} className="h-full w-full rounded-[12px] object-contain" />
+            ) : (
+              <span className="text-lg font-bold text-slate-400">
+                {(setting?.school_name ?? "MS").trim().slice(0, 2) || "MS"}
+              </span>
+            )}
+          </div>
+          <div className="min-w-0">
+            <div className="truncate text-sm text-slate-500">المدرسة</div>
+            <div className="truncate text-base font-semibold">
+              {setting?.school_name?.trim() || "اسم المدرسة"}
+            </div>
+          </div>
+        </Link>
       </SidebarHeader>
       <SidebarContent>
         <NavMain items={data.navMain} />
         <NavSecondary items={data.navSecondary} className="mt-auto" />
       </SidebarContent>
-      <SidebarFooter>
-        <NavUser user={data.user} />
+      <SidebarFooter className="p-3">
+        <div className="rounded-2xl bg-white p-2 shadow-sm">
+          <NavUser
+            user={data.user}
+            buttonClassName="bg-white text-slate-900 hover:bg-slate-50 data-[state=open]:bg-slate-50 data-[state=open]:text-slate-900"
+            emailClassName="text-slate-500"
+          />
+        </div>
       </SidebarFooter>
     </Sidebar>
   )

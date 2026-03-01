@@ -168,7 +168,6 @@ export function ChartAreaInteractive() {
           <span className="@[540px]/card:block hidden">
             Total for the last 3 months
           </span>
-          <span className="@[540px]/card:hidden">Last 3 months</span>
         </CardDescription>
         <div className="absolute right-4 top-4">
           <ToggleGroup
@@ -290,3 +289,7 @@ export function ChartAreaInteractive() {
     </Card>
   )
 }
+
+
+
+

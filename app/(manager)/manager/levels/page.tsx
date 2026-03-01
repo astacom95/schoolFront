@@ -7,7 +7,7 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 
 type ClassPayload = {
-  id: string
+  id: string | number
   name: string
   number_of_subjects: number
 }
@@ -26,6 +26,10 @@ export default function LevelsPage() {
   const [submitting, setSubmitting] = useState(false)
   const [message, setMessage] = useState<{ text: string; variant: "success" | "error" } | null>(null)
   const [levels, setLevels] = useState<LevelResponse[]>([])
+  const [editingLevelId, setEditingLevelId] = useState<number | null>(null)
+  const [editingLevelName, setEditingLevelName] = useState("")
+  const [editingClasses, setEditingClasses] = useState<ClassPayload[]>([])
+  const [savingEdit, setSavingEdit] = useState(false)
 
   useEffect(() => {
     const loadLevels = async () => {
@@ -119,6 +123,86 @@ export default function LevelsPage() {
     } catch (error: any) {
       console.error(error)
       setMessage({ text: error?.message || "حدث خطأ أثناء الحذف.", variant: "error" })
+    }
+  }
+
+  const startEditingLevel = (level: LevelResponse) => {
+    setMessage(null)
+    setEditingLevelId(level.id)
+    setEditingLevelName(level.name)
+    setEditingClasses(
+      level.classes?.length
+        ? level.classes.map((cls) => ({
+            id: cls.id,
+            name: cls.name,
+            number_of_subjects: cls.number_of_subjects,
+          }))
+        : [{ id: crypto.randomUUID(), name: "", number_of_subjects: 0 }],
+    )
+  }
+
+  const cancelEditingLevel = () => {
+    setEditingLevelId(null)
+    setEditingLevelName("")
+    setEditingClasses([])
+  }
+
+  const addEditingClassRow = () => {
+    setEditingClasses((rows) => [...rows, { id: crypto.randomUUID(), name: "", number_of_subjects: 0 }])
+  }
+
+  const removeEditingClassRow = (id: string | number) => {
+    setEditingClasses((rows) => (rows.length > 1 ? rows.filter((row) => row.id !== id) : rows))
+  }
+
+  const updateEditingClassRow = (id: string | number, key: keyof ClassPayload, value: string | number) => {
+    setEditingClasses((rows) =>
+      rows.map((row) => (row.id === id ? { ...row, [key]: value } : row))
+    )
+  }
+
+  const handleUpdateLevel = async (levelId: number) => {
+    setMessage(null)
+    setSavingEdit(true)
+    try {
+      const payload = {
+        name: editingLevelName.trim(),
+        classes: editingClasses
+          .filter((cls) => cls.name.trim())
+          .map((cls) => ({
+            ...(typeof cls.id === "number" ? { id: cls.id } : {}),
+            name: cls.name.trim(),
+            number_of_subjects: Number(cls.number_of_subjects) || 0,
+          })),
+      }
+
+      if (!payload.name || payload.classes.length === 0) {
+        setMessage({ text: "الرجاء إدخال اسم المستوى وإضافة فصل واحد على الأقل.", variant: "error" })
+        setSavingEdit(false)
+        return
+      }
+
+      const base = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000"
+      const res = await fetch(`${base}/api/manager/levels/${levelId}`, {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(payload),
+      })
+      const json = await res.json()
+      if (!res.ok) {
+        throw new Error(json?.message || "فشل تحديث المستوى")
+      }
+
+      setLevels((prev) => prev.map((level) => (level.id === levelId ? json.data : level)))
+      setMessage({ text: "تم تحديث المستوى والفصول بنجاح.", variant: "success" })
+      cancelEditingLevel()
+    } catch (error: any) {
+      console.error(error)
+      setMessage({ text: error?.message || "حدث خطأ أثناء التحديث.", variant: "error" })
+    } finally {
+      setSavingEdit(false)
     }
   }
 
@@ -218,15 +302,97 @@ export default function LevelsPage() {
                       <div className="text-xs text-muted-foreground">
                         {level.classes?.length ?? 0} فصول
                       </div>
-                      <Button
-                        type="button"
-                        variant="destructive"
-                        size="sm"
-                        onClick={() => handleDelete(level.id)}
-                      >
-                        حذف
-                      </Button>
+                      <div className="flex items-center gap-2">
+                        <Button
+                          type="button"
+                          variant="outline"
+                          size="sm"
+                          onClick={() => startEditingLevel(level)}
+                        >
+                          تعديل
+                        </Button>
+                        <Button
+                          type="button"
+                          variant="destructive"
+                          size="sm"
+                          onClick={() => handleDelete(level.id)}
+                        >
+                          حذف
+                        </Button>
+                      </div>
                     </div>
+                    {editingLevelId === level.id && (
+                      <div className="mt-4 rounded-lg border border-slate-200 bg-slate-50 p-4 space-y-4">
+                        <div className="grid gap-4 md:grid-cols-3">
+                          <div className="md:col-span-1">
+                            <Label className="mb-1 block text-sm font-semibold">اسم المستوى</Label>
+                            <Input
+                              value={editingLevelName}
+                              onChange={(e) => setEditingLevelName(e.target.value)}
+                              placeholder="مثال: الصف الأول"
+                            />
+                          </div>
+                        </div>
+                        <div className="space-y-3">
+                          <div className="flex items-center justify-between">
+                            <h3 className="text-sm font-semibold">الفصول</h3>
+                            <Button type="button" variant="outline" size="sm" onClick={addEditingClassRow}>
+                              إضافة فصل
+                            </Button>
+                          </div>
+                          <div className="grid gap-3">
+                            {editingClasses.map((row) => (
+                              <div
+                                key={row.id}
+                                className="grid gap-2 md:grid-cols-[2fr,1fr,auto] items-end rounded-lg border border-slate-200 bg-white p-3"
+                              >
+                                <div className="flex flex-col gap-1">
+                                  <Label className="text-xs font-semibold">اسم الفصل</Label>
+                                  <Input
+                                    value={row.name}
+                                    onChange={(e) => updateEditingClassRow(row.id, "name", e.target.value)}
+                                    placeholder="مثال: الفصل أ"
+                                  />
+                                </div>
+                                <div className="flex flex-col gap-1">
+                                  <Label className="text-xs font-semibold">عدد المواد</Label>
+                                  <Input
+                                    type="number"
+                                    min={0}
+                                    value={row.number_of_subjects}
+                                    onChange={(e) => updateEditingClassRow(row.id, "number_of_subjects", Number(e.target.value))}
+                                  />
+                                </div>
+                                <div className="flex justify-end">
+                                  <Button
+                                    type="button"
+                                    variant="ghost"
+                                    size="sm"
+                                    onClick={() => removeEditingClassRow(row.id)}
+                                    disabled={editingClasses.length === 1}
+                                  >
+                                    حذف
+                                  </Button>
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                        <div className="flex justify-end gap-2">
+                          <Button type="button" variant="outline" onClick={cancelEditingLevel} disabled={savingEdit}>
+                            إلغاء
+                          </Button>
+                          <Button
+                            type="button"
+                            onClick={() => handleUpdateLevel(level.id)}
+                            disabled={savingEdit}
+                            className="bg-[var(--color-sidebar-bg)] text-white hover:opacity-90"
+                          >
+                            {savingEdit ? "جارٍ الحفظ..." : "حفظ التعديلات"}
+                          </Button>
+                        </div>
+                      </div>
+                    )}
                     {level.classes?.length ? (
                       <div className="mt-2 grid gap-2 md:grid-cols-3">
                         {level.classes.map((cls) => (

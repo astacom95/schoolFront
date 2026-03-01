@@ -35,6 +35,7 @@ export default function FeesPage() {
   const [message, setMessage] = useState<{ text: string; variant: "success" | "error" } | null>(null)
   const [submitting, setSubmitting] = useState(false)
   const [deletingId, setDeletingId] = useState<number | null>(null)
+  const [editingFeeId, setEditingFeeId] = useState<number | null>(null)
 
   const readJson = async (res: Response) => {
     const contentType = res.headers.get("content-type") || ""
@@ -113,34 +114,74 @@ export default function FeesPage() {
     }
     setSubmitting(true)
     try {
-      const payload = {
-        class_id: classId,
-        total_fee: total,
-        minimum_fee: min,
+      const payload = new URLSearchParams()
+      payload.set("class_id", String(classId))
+      payload.set("total_fee", String(total))
+      payload.set("minimum_fee", String(min))
+      if (editingFeeId) {
+        payload.set("_method", "PUT")
       }
-      const res = await fetch(`${apiRoot}/manager/fees`, {
+
+      const res = await fetch(editingFeeId ? `${apiRoot}/manager/fees/${editingFeeId}` : `${apiRoot}/manager/fees`, {
         method: "POST",
         headers: {
-          "Content-Type": "application/json",
+          Accept: "application/json",
+          "Content-Type": "application/x-www-form-urlencoded;charset=UTF-8",
         },
-        body: JSON.stringify(payload),
+        body: payload.toString(),
       })
       if (!res.ok) {
-        const text = await res.text()
-        throw new Error(text || "فشل حفظ الرسوم")
+        const json = await readJson(res)
+        throw new Error(json?.message || "فشل حفظ الرسوم")
       }
       const json = await readJson(res)
-      const newFee = json.data as Fee
-      setFees((prev) => [newFee, ...prev])
+      const savedFee = json.data as Fee
+      setFees((prev) =>
+        editingFeeId
+          ? prev.map((fee) => (fee.id === editingFeeId ? savedFee : fee))
+          : [savedFee, ...prev]
+      )
       setTotalFee("")
       setMinimumFee("")
-      setMessage({ text: "تم حفظ الرسوم بنجاح.", variant: "success" })
+      setEditingFeeId(null)
+      setMessage({
+        text: editingFeeId ? "تم تحديث الرسوم بنجاح." : "تم حفظ الرسوم بنجاح.",
+        variant: "success",
+      })
     } catch (error: any) {
       console.error(error)
       setMessage({ text: error?.message || "حدث خطأ أثناء الحفظ.", variant: "error" })
     } finally {
       setSubmitting(false)
     }
+  }
+
+  const handleEdit = (fee: Fee) => {
+    const matchedLevel = levels.find((level) => level.classes?.some((cls) => cls.id === fee.class_id))
+
+    setEditingFeeId(fee.id)
+    setLevelId(matchedLevel?.id ?? null)
+    setClassId(fee.class_id)
+    setTotalFee(String(fee.total_fee))
+    setMinimumFee(String(fee.minimum_fee))
+    setMessage(null)
+    window.scrollTo({ top: 0, behavior: "smooth" })
+  }
+
+  const resetForm = () => {
+    setEditingFeeId(null)
+    setTotalFee("")
+    setMinimumFee("")
+    setMessage(null)
+
+    if (levels.length === 0) {
+      setLevelId(null)
+      setClassId(null)
+      return
+    }
+
+    setLevelId(levels[0].id)
+    setClassId(levels[0].classes?.[0]?.id ?? null)
   }
 
   const handleDelete = async (feeId: number) => {
@@ -169,106 +210,122 @@ export default function FeesPage() {
       <div>
         <h1 className="text-2xl font-bold">الرسوم</h1>
         <p className="text-sm text-muted-foreground mt-1">
-          أضف رسوم جديدة، حدد الحد الأدنى، واربطها بالفصل المناسب.
+          أضف أو عدل الرسوم، حدد الحد الأدنى، واربطها بالفصل المناسب.
         </p>
       </div>
 
-          <form onSubmit={handleSubmit} className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm space-y-4">
-            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-              <div className="flex flex-col gap-1">
-                <Label className="text-sm font-semibold">المستوى</Label>
-                <select
-                  className="h-10 rounded-md border border-slate-200 px-3 text-sm"
-                  value={levelId ?? ""}
-                  onChange={(e) => setLevelId(e.target.value ? Number(e.target.value) : null)}
-                >
-                  {levels.map((lvl) => (
-                    <option key={lvl.id} value={lvl.id}>{lvl.name}</option>
-                  ))}
-                  {levels.length === 0 && <option value="">لا توجد مستويات</option>}
-                </select>
-              </div>
-              <div className="flex flex-col gap-1">
-                <Label className="text-sm font-semibold">الفصل</Label>
-                <select
-                  className="h-10 rounded-md border border-slate-200 px-3 text-sm"
-                  value={classId ?? ""}
-                  onChange={(e) => setClassId(e.target.value ? Number(e.target.value) : null)}
-                  disabled={filteredClasses.length === 0}
-                >
-                  {filteredClasses.map((cls) => (
-                    <option key={cls.id} value={cls.id}>{cls.name}</option>
-                  ))}
-                  {filteredClasses.length === 0 && <option value="">لا توجد فصول</option>}
-                </select>
-              </div>
-              <div className="flex flex-col gap-1">
-                <Label className="text-sm font-semibold" htmlFor="totalFee">إجمالي الرسوم</Label>
-                <Input
-                  id="totalFee"
-                  type="number"
-                  min={0}
-                  value={totalFee}
-                  onChange={(e) => setTotalFee(e.target.value)}
-                  placeholder="مثال: 1500"
-                />
-              </div>
-              <div className="flex flex-col gap-1">
-                <Label className="text-sm font-semibold" htmlFor="minimumFee">الحد الأدنى</Label>
-                <Input
-                  id="minimumFee"
-                  type="number"
-                  min={0}
-                  value={minimumFee}
-                  onChange={(e) => setMinimumFee(e.target.value)}
-                  placeholder="مثال: 500"
-                />
-              </div>
-            </div>
+      <form onSubmit={handleSubmit} className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm space-y-4">
+        {editingFeeId && (
+          <div className="rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-amber-900">
+            أنت الآن في وضع تعديل الرسوم.
+          </div>
+        )}
 
-            {message && (
-              <div className={`text-sm ${message.variant === "error" ? "text-red-600" : "text-green-600"}`}>
-                {message.text}
-              </div>
-            )}
+        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+          <div className="flex flex-col gap-1">
+            <Label className="text-sm font-semibold">المستوى</Label>
+            <select
+              className="h-10 rounded-md border border-slate-200 px-3 text-sm"
+              value={levelId ?? ""}
+              onChange={(e) => setLevelId(e.target.value ? Number(e.target.value) : null)}
+            >
+              {levels.map((lvl) => (
+                <option key={lvl.id} value={lvl.id}>{lvl.name}</option>
+              ))}
+              {levels.length === 0 && <option value="">لا توجد مستويات</option>}
+            </select>
+          </div>
+          <div className="flex flex-col gap-1">
+            <Label className="text-sm font-semibold">الفصل</Label>
+            <select
+              className="h-10 rounded-md border border-slate-200 px-3 text-sm"
+              value={classId ?? ""}
+              onChange={(e) => setClassId(e.target.value ? Number(e.target.value) : null)}
+              disabled={filteredClasses.length === 0}
+            >
+              {filteredClasses.map((cls) => (
+                <option key={cls.id} value={cls.id}>{cls.name}</option>
+              ))}
+              {filteredClasses.length === 0 && <option value="">لا توجد فصول</option>}
+            </select>
+          </div>
+          <div className="flex flex-col gap-1">
+            <Label className="text-sm font-semibold" htmlFor="totalFee">إجمالي الرسوم</Label>
+            <Input
+              id="totalFee"
+              type="number"
+              min={0}
+              value={totalFee}
+              onChange={(e) => setTotalFee(e.target.value)}
+              placeholder="مثال: 1500"
+            />
+          </div>
+          <div className="flex flex-col gap-1">
+            <Label className="text-sm font-semibold" htmlFor="minimumFee">الحد الأدنى</Label>
+            <Input
+              id="minimumFee"
+              type="number"
+              min={0}
+              value={minimumFee}
+              onChange={(e) => setMinimumFee(e.target.value)}
+              placeholder="مثال: 500"
+            />
+          </div>
+        </div>
 
-            <div className="flex justify-end">
-              <Button type="submit" disabled={submitting} className="bg-[var(--color-sidebar-bg)] text-white hover:opacity-90">
-                {submitting ? "جارٍ الحفظ..." : "حفظ الرسوم"}
+        {message && (
+          <div className={`text-sm ${message.variant === "error" ? "text-red-600" : "text-green-600"}`}>
+            {message.text}
+          </div>
+        )}
+
+        <div className="flex justify-end">
+          <div className="flex gap-2">
+            {editingFeeId && (
+              <Button type="button" variant="outline" onClick={resetForm}>
+                إلغاء التعديل
               </Button>
-            </div>
-          </form>
-
-          <div className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
-            <h2 className="text-lg font-semibold mb-3">قائمة الرسوم</h2>
-            {fees.length === 0 ? (
-              <div className="text-sm text-muted-foreground">لا توجد رسوم حالياً.</div>
-            ) : (
-              <div className="grid gap-3">
-                {fees.map((fee) => (
-                  <div key={fee.id} className="rounded-lg border border-slate-200 p-3">
-                    <div className="flex items-center justify-between flex-wrap gap-2">
-                      <div className="font-semibold">
-                        الفصل: {fee.class_name || fee.class_id}
-                      </div>
-                      <div className="text-xs text-muted-foreground">
-                        الإجمالي: {fee.total_fee} | الحد الأدنى: {fee.minimum_fee}
-                      </div>
-                    </div>
-                    <div className="mt-3 flex justify-end">
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => handleDelete(fee.id)}
-                        disabled={deletingId === fee.id}
-                      >
-                        {deletingId === fee.id ? "جارٍ الحذف..." : "حذف"}
-                      </Button>
-                    </div>
-                  </div>
-                ))}
-              </div>
             )}
+            <Button type="submit" disabled={submitting} className="bg-[var(--color-sidebar-bg)] text-white hover:opacity-90">
+              {submitting ? "جارٍ الحفظ..." : editingFeeId ? "حفظ التعديلات" : "حفظ الرسوم"}
+            </Button>
+          </div>
+        </div>
+      </form>
+
+      <div className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
+        <h2 className="text-lg font-semibold mb-3">قائمة الرسوم</h2>
+        {fees.length === 0 ? (
+          <div className="text-sm text-muted-foreground">لا توجد رسوم حالياً.</div>
+        ) : (
+          <div className="grid gap-3">
+            {fees.map((fee) => (
+              <div key={fee.id} className="rounded-lg border border-slate-200 p-3">
+                <div className="flex items-center justify-between flex-wrap gap-2">
+                  <div className="font-semibold">
+                    الفصل: {fee.class_name || fee.class_id}
+                  </div>
+                  <div className="text-xs text-muted-foreground">
+                    الإجمالي: {fee.total_fee} | الحد الأدنى: {fee.minimum_fee}
+                  </div>
+                </div>
+                <div className="mt-3 flex justify-end gap-2">
+                  <Button variant="outline" size="sm" onClick={() => handleEdit(fee)}>
+                    تعديل
+                  </Button>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => handleDelete(fee.id)}
+                    disabled={deletingId === fee.id}
+                  >
+                    {deletingId === fee.id ? "جارٍ الحذف..." : "حذف"}
+                  </Button>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
       </div>
     </div>
   )

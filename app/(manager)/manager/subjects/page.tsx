@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useState } from "react"
 
 import { Button } from "@/components/ui/button"
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 
@@ -25,6 +26,14 @@ type Subject = {
   book_thumbnail?: string | null
 }
 
+type EditSubjectForm = {
+  name: string
+  level_id: number | null
+  class_id: number | null
+  total_lessons: number | string
+  total_degree: number | string
+}
+
 export default function SubjectsPage() {
   const PDF_MAX_BYTES = 100 * 1024 * 1024 // ~100MB to match backend limit
   const IMAGE_MAX_BYTES = 5 * 1024 * 1024 // ~5MB
@@ -36,10 +45,22 @@ export default function SubjectsPage() {
   const [name, setName] = useState("")
   const [levelId, setLevelId] = useState<number | null>(null)
   const [classId, setClassId] = useState<number | null>(null)
+  const [filterClassId, setFilterClassId] = useState<number | "all">("all")
   const [totalLessons, setTotalLessons] = useState<number | string>("")
   const [totalDegree, setTotalDegree] = useState<number | string>("")
   const [bookPdf, setBookPdf] = useState<File | null>(null)
   const [bookThumbnail, setBookThumbnail] = useState<File | null>(null)
+  const [editingSubject, setEditingSubject] = useState<Subject | null>(null)
+  const [editForm, setEditForm] = useState<EditSubjectForm>({
+    name: "",
+    level_id: null,
+    class_id: null,
+    total_lessons: "",
+    total_degree: "",
+  })
+  const [editBookPdf, setEditBookPdf] = useState<File | null>(null)
+  const [editBookThumbnail, setEditBookThumbnail] = useState<File | null>(null)
+  const [savingEdit, setSavingEdit] = useState(false)
   const [message, setMessage] = useState<{ text: string; variant: "success" | "error" } | null>(null)
   const [submitting, setSubmitting] = useState(false)
 
@@ -84,6 +105,17 @@ export default function SubjectsPage() {
     return levels.find((l) => l.id === levelId)?.classes ?? []
   }, [levelId, levels])
 
+  const classOptions = useMemo(() => {
+    const options = levels.flatMap((level) =>
+      (level.classes ?? []).map((cls) => ({
+        id: cls.id,
+        name: cls.name,
+      })),
+    )
+
+    return options.filter((option, index, list) => list.findIndex((entry) => entry.id === option.id) === index)
+  }, [levels])
+
   useEffect(() => {
     // adjust class selection when level changes
     if (filteredClasses.length === 0) {
@@ -92,6 +124,48 @@ export default function SubjectsPage() {
       setClassId(filteredClasses[0].id)
     }
   }, [filteredClasses, classId])
+
+  const filteredSubjectsList = useMemo(() => {
+    if (filterClassId === "all") return subjects
+    return subjects.filter((subject) => subject.class_id === filterClassId)
+  }, [filterClassId, subjects])
+
+  const editFilteredClasses = useMemo(() => {
+    if (!editForm.level_id) return []
+    return levels.find((level) => level.id === editForm.level_id)?.classes ?? []
+  }, [editForm.level_id, levels])
+
+  useEffect(() => {
+    if (!editingSubject) return
+
+    if (editFilteredClasses.length === 0) {
+      setEditForm((prev) => ({ ...prev, class_id: null }))
+      return
+    }
+
+    const currentClassExists = editFilteredClasses.some((cls) => cls.id === editForm.class_id)
+    if (!currentClassExists) {
+      setEditForm((prev) => ({ ...prev, class_id: editFilteredClasses[0].id }))
+    }
+  }, [editFilteredClasses, editForm.class_id, editingSubject])
+
+  const openEditDialog = (subject: Subject) => {
+    setMessage(null)
+    setEditingSubject(subject)
+    setEditForm({
+      name: subject.name,
+      level_id: subject.level_id,
+      class_id: subject.class_id,
+      total_lessons: subject.total_lessons,
+      total_degree: subject.total_degree,
+    })
+    setEditBookPdf(null)
+    setEditBookThumbnail(null)
+  }
+
+  const handleEditFormChange = <K extends keyof EditSubjectForm>(key: K, value: EditSubjectForm[K]) => {
+    setEditForm((prev) => ({ ...prev, [key]: value }))
+  }
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -155,6 +229,76 @@ export default function SubjectsPage() {
       setMessage({ text: error?.message || "حدث خطأ أثناء الحفظ.", variant: "error" })
     } finally {
       setSubmitting(false)
+    }
+  }
+
+  const handleUpdateSubject = async (e: React.FormEvent) => {
+    e.preventDefault()
+    if (!editingSubject) return
+
+    setMessage(null)
+
+    if (!editForm.name.trim() || !editForm.level_id || !editForm.class_id || editForm.total_lessons === "" || editForm.total_degree === "") {
+      setMessage({ text: "الرجاء ملء جميع حقول التعديل.", variant: "error" })
+      return
+    }
+
+    if (editBookPdf && editBookPdf.size > PDF_MAX_BYTES) {
+      setMessage({ text: "حجم ملف الـ PDF يتجاوز الحد المسموح (حتى 100MB).", variant: "error" })
+      return
+    }
+    if (editBookThumbnail && editBookThumbnail.size > IMAGE_MAX_BYTES) {
+      setMessage({ text: "حجم صورة الكتاب كبير جداً (الحد الأقصى 5MB).", variant: "error" })
+      return
+    }
+
+    setSavingEdit(true)
+    try {
+      const formData = new FormData()
+      formData.append("_method", "PUT")
+      formData.append("name", editForm.name.trim())
+      formData.append("level_id", String(editForm.level_id))
+      formData.append("class_id", String(editForm.class_id))
+      formData.append("total_lessons", String(Number(editForm.total_lessons)))
+      formData.append("total_degree", String(Number(editForm.total_degree)))
+      if (editBookPdf) formData.append("book_pdf", editBookPdf)
+      if (editBookThumbnail) formData.append("book_thumbnail", editBookThumbnail)
+
+      const res = await fetch(`${apiBase}/api/manager/subjects/${editingSubject.id}`, {
+        method: "POST",
+        headers: {
+          Accept: "application/json",
+          "X-Requested-With": "XMLHttpRequest",
+        },
+        body: formData,
+      })
+
+      let json: any = null
+      try {
+        json = await res.json()
+      } catch {
+        throw new Error("فشل في قراءة استجابة الخادم.")
+      }
+
+      if (!res.ok) {
+        if (res.status === 422 && json?.errors && typeof json.errors === "object") {
+          const firstError = Object.values(json.errors).flat().find(Boolean)
+          if (typeof firstError === "string") throw new Error(firstError)
+        }
+        throw new Error(json?.message || "فشل تحديث المادة")
+      }
+
+      const updatedSubject = json.data as Subject
+      setSubjects((prev) => prev.map((subject) => (subject.id === updatedSubject.id ? updatedSubject : subject)))
+      setEditingSubject(null)
+      setEditBookPdf(null)
+      setEditBookThumbnail(null)
+      setMessage({ text: "تم تحديث المادة بنجاح.", variant: "success" })
+    } catch (error: any) {
+      console.error(error)
+      setMessage({ text: error?.message || "حدث خطأ أثناء تحديث المادة.", variant: "error" })
+    } finally {
+      setSavingEdit(false)
     }
   }
 
@@ -261,17 +405,37 @@ export default function SubjectsPage() {
           </form>
 
           <div className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
-            <h2 className="text-lg font-semibold mb-3">قائمة المواد</h2>
-            {subjects.length === 0 ? (
+            <div className="mb-3 flex items-center justify-between gap-3 flex-wrap">
+              <h2 className="text-lg font-semibold">قائمة المواد</h2>
+              <div className="flex min-w-[220px] flex-col gap-1">
+                <Label className="text-sm font-semibold">تصفية حسب الفصل</Label>
+                <select
+                  className="h-10 rounded-md border border-slate-200 bg-white px-3 text-sm"
+                  value={filterClassId}
+                  onChange={(e) => setFilterClassId(e.target.value === "all" ? "all" : Number(e.target.value))}
+                >
+                  <option value="all">كل الفصول</option>
+                  {classOptions.map((cls) => (
+                    <option key={cls.id} value={cls.id}>{cls.name}</option>
+                  ))}
+                </select>
+              </div>
+            </div>
+            {filteredSubjectsList.length === 0 ? (
               <div className="text-sm text-muted-foreground">لا توجد مواد حالياً.</div>
             ) : (
               <div className="grid gap-3">
-                {subjects.map((subj) => (
+                {filteredSubjectsList.map((subj) => (
                   <div key={subj.id} className="rounded-lg border border-slate-200 p-3">
                     <div className="flex items-center justify-between flex-wrap gap-2">
                       <div className="font-semibold">{subj.name}</div>
-                      <div className="text-xs text-muted-foreground">
-                        المستوى: {subj.level_name || subj.level_id} - الفصل: {subj.class_name || subj.class_id}
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <div className="text-xs text-muted-foreground">
+                          المستوى: {subj.level_name || subj.level_id} - الفصل: {subj.class_name || subj.class_id}
+                        </div>
+                        <Button type="button" variant="outline" size="sm" onClick={() => openEditDialog(subj)}>
+                          تعديل
+                        </Button>
                       </div>
                     </div>
                     <div className="mt-1 text-xs text-muted-foreground">
@@ -310,6 +474,100 @@ export default function SubjectsPage() {
               </div>
             )}
           </div>
+      <Dialog
+        open={editingSubject !== null}
+        onOpenChange={(open) => {
+          if (!open && !savingEdit) {
+            setEditingSubject(null)
+            setEditBookPdf(null)
+            setEditBookThumbnail(null)
+          }
+        }}
+      >
+        <DialogContent dir="rtl" className="sm:max-w-3xl">
+          <DialogHeader className="text-right sm:text-right">
+            <DialogTitle>تعديل المادة</DialogTitle>
+            <DialogDescription>يمكنك تعديل بيانات المادة وربطها بالمستوى والفصل المناسبين.</DialogDescription>
+          </DialogHeader>
+          <form onSubmit={handleUpdateSubject} className="grid gap-4">
+            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+              <div className="flex flex-col gap-1">
+                <Label>اسم المادة</Label>
+                <Input value={editForm.name} onChange={(e) => handleEditFormChange("name", e.target.value)} />
+              </div>
+              <div className="flex flex-col gap-1">
+                <Label>المستوى</Label>
+                <select
+                  className="h-10 rounded-md border border-slate-200 px-3 text-sm"
+                  value={editForm.level_id ?? ""}
+                  onChange={(e) => handleEditFormChange("level_id", e.target.value ? Number(e.target.value) : null)}
+                >
+                  {levels.map((lvl) => (
+                    <option key={lvl.id} value={lvl.id}>{lvl.name}</option>
+                  ))}
+                  {levels.length === 0 && <option value="">لا توجد مستويات</option>}
+                </select>
+              </div>
+              <div className="flex flex-col gap-1">
+                <Label>الفصل</Label>
+                <select
+                  className="h-10 rounded-md border border-slate-200 px-3 text-sm"
+                  value={editForm.class_id ?? ""}
+                  onChange={(e) => handleEditFormChange("class_id", e.target.value ? Number(e.target.value) : null)}
+                  disabled={editFilteredClasses.length === 0}
+                >
+                  {editFilteredClasses.map((cls) => (
+                    <option key={cls.id} value={cls.id}>{cls.name}</option>
+                  ))}
+                  {editFilteredClasses.length === 0 && <option value="">لا توجد فصول</option>}
+                </select>
+              </div>
+              <div className="flex flex-col gap-1">
+                <Label>إجمالي الدرجات</Label>
+                <Input
+                  type="number"
+                  min={0}
+                  value={editForm.total_degree}
+                  onChange={(e) => handleEditFormChange("total_degree", e.target.value)}
+                />
+              </div>
+              <div className="flex flex-col gap-1">
+                <Label>إجمالي الدروس</Label>
+                <Input
+                  type="number"
+                  min={0}
+                  value={editForm.total_lessons}
+                  onChange={(e) => handleEditFormChange("total_lessons", e.target.value)}
+                />
+              </div>
+              <div className="flex flex-col gap-1">
+                <Label>استبدال كتاب المادة (PDF)</Label>
+                <Input
+                  type="file"
+                  accept="application/pdf"
+                  onChange={(e) => setEditBookPdf(e.target.files?.[0] ?? null)}
+                />
+              </div>
+              <div className="flex flex-col gap-1">
+                <Label>استبدال صورة الكتاب</Label>
+                <Input
+                  type="file"
+                  accept="image/png,image/jpeg,image/webp"
+                  onChange={(e) => setEditBookThumbnail(e.target.files?.[0] ?? null)}
+                />
+              </div>
+            </div>
+            <DialogFooter className="sm:justify-start">
+              <Button type="button" variant="outline" onClick={() => setEditingSubject(null)} disabled={savingEdit}>
+                إلغاء
+              </Button>
+              <Button type="submit" disabled={savingEdit} className="bg-[var(--color-sidebar-bg)] text-white hover:opacity-90">
+                {savingEdit ? "جارٍ الحفظ..." : "حفظ التعديلات"}
+              </Button>
+            </DialogFooter>
+          </form>
+        </DialogContent>
+      </Dialog>
     </div>
   )
 }

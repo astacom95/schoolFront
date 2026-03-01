@@ -3,6 +3,7 @@
 import { LogOutIcon, MoreVerticalIcon } from "lucide-react"
 import { useRouter } from "next/navigation"
 
+import { cn } from "@/components/ui/utils"
 import {
   Avatar,
   AvatarFallback,
@@ -28,12 +29,18 @@ import { apiRoutes } from "@/lib/routes"
 
 export function NavUser({
   user,
+  className,
+  buttonClassName,
+  emailClassName,
 }: {
   user: {
     name: string
     email: string
     avatar: string
   }
+  className?: string
+  buttonClassName?: string
+  emailClassName?: string
 }) {
   const { isMobile } = useSidebar()
   const router = useRouter()
@@ -60,13 +67,16 @@ export function NavUser({
   }
 
   return (
-    <SidebarMenu>
+    <SidebarMenu className={className}>
       <SidebarMenuItem>
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
             <SidebarMenuButton
               size="lg"
-              className="data-[state=open]:bg-sidebar-accent data-[state=open]:text-sidebar-accent-foreground"
+              className={cn(
+                "data-[state=open]:bg-sidebar-accent data-[state=open]:text-sidebar-accent-foreground",
+                buttonClassName,
+              )}
             >
               <Avatar className="h-12 w-12 rounded-full grayscale">
                 <AvatarImage src={user.avatar} alt={user.name} />
@@ -74,7 +84,7 @@ export function NavUser({
               </Avatar>
               <div className="grid flex-1 text-left text-sm leading-tight">
                 <span className="truncate font-medium">{user.name}</span>
-                <span className="truncate text-xs text-muted-foreground">
+                <span className={cn("truncate text-xs text-muted-foreground", emailClassName)}>
                   {user.email}
                 </span>
               </div>
