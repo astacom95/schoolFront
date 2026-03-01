@@ -93,7 +93,7 @@
 
 body {
   margin: 0;
-  font-family: "Cairo", "Noto Sans Arabic", "Segoe UI", sans-serif;
+  font-family: var(--font-cairo), "Noto Sans Arabic", "Segoe UI", sans-serif;
   background: radial-gradient(circle at 20% 20%, rgba(140, 169, 255, 0.20), rgba(255, 255, 255, 0)),
     linear-gradient(180deg, #fdfdfd 0%, #f5f8ff 100%);
   color: var(--color-text);
@@ -121,21 +121,297 @@ button {
   box-shadow: 0 10px 35px rgba(15, 23, 42, 0.08);
 }
 
-.login-layout {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-  align-items: center;
+.login-screen {
+  position: relative;
+  min-height: 100vh;
+  padding: 0;
+  overflow: hidden;
+  background: #ffffff;
 }
 
-.login-badge {
+.login-scene {
+  position: relative;
+  width: 100%;
+  min-height: 100vh;
+  margin: 0 auto;
+  overflow: hidden;
+}
+
+.login-content {
+  position: relative;
+  z-index: 1;
+  display: grid;
+  grid-template-columns: minmax(360px, 35fr) minmax(0, 65fr);
+  align-items: center;
+  min-height: 100vh;
+  gap: 0;
+}
+
+.login-brand-shell {
+  display: flex;
+  align-items: center;
+  gap: 26px;
+  justify-content: center;
+  max-width: 610px;
+  margin: 0 auto;
+  align-self: center;
+  padding: 48px 40px;
+}
+
+.login-brand-mark {
+  flex-shrink: 0;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  width: 144px;
+  height: 144px;
+}
+
+.login-brand-logo {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  border-radius: 10%;
+}
+
+.login-brand-copy {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  text-align: right;
+  direction: rtl;
+  min-width: 0;
+}
+
+.login-brand-title {
+  margin: 0;
+  font-size: clamp(2rem, 3vw, 3.35rem);
+  line-height: 1.15;
+  font-weight: 700;
+  color: #000000;
+  white-space: nowrap;
+}
+
+.login-brand-slogan {
+  margin: 0;
+  font-family: "Baskervville", "Times New Roman", serif;
+  font-size: clamp(1rem, 1.45vw, 1.7rem);
+  line-height: 1.15;
+  color: #6b7280;
+  white-space: nowrap;
+}
+
+.login-form-anchor {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 100%;
+  padding: 48px 40px;
+  background: var(--login-brand-color);
+}
+
+.login-form-panel,
+.login-redirect {
+  width: 100%;
+  max-width: 392px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.login-form-title {
+  margin: 0 0 14px;
+  text-align: center;
+  font-family: var(--font-cairo), "Noto Sans Arabic", "Segoe UI", sans-serif;
+  font-size: clamp(2rem, 2.4vw, 2.85rem);
+  line-height: 1.2;
+  font-weight: 400;
+  color: #ffffff;
+}
+
+.login-field {
+  position: relative;
+  display: block;
+}
+
+.login-input {
+  width: 100%;
+  height: 72px;
+  border: none;
+  border-radius: 18px;
+  padding: 0 78px 0 74px;
+  background: rgba(255, 255, 255, 0.96);
+  color: #101010;
+  font-size: 1.08rem;
+  line-height: 1.4;
+  text-align: right;
+  box-shadow: 0 10px 26px rgba(0, 0, 0, 0.08);
+}
+
+.login-input::placeholder {
+  color: #111111;
+  opacity: 1;
+}
+
+.login-input:focus {
+  outline: 3px solid rgba(255, 255, 255, 0.35);
+  box-shadow: 0 10px 26px rgba(0, 0, 0, 0.14);
+}
+
+.login-field-icon,
+.login-field-toggle {
+  position: absolute;
+  top: 50%;
+  z-index: 1;
   display: inline-flex;
   align-items: center;
-  gap: 6px;
-  padding: 6px 12px;
-  border-radius: 999px;
-  background: rgba(255, 255, 255, 0.85);
-  color: #c08401;
-  font-size: 13px;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  color: #111111;
+  transform: translateY(-50%);
+}
+
+.login-field-icon--end {
+  right: 20px;
+}
+
+.login-field-toggle {
+  left: 20px;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  cursor: pointer;
+}
+
+.login-field svg {
+  width: 100%;
+  height: 100%;
+}
+
+.login-error {
+  margin: 2px 0 0;
+  color: #fff1f1;
+  text-align: center;
+  font-size: 0.98rem;
+  font-weight: 600;
+}
+
+.login-submit {
+  width: 100%;
+  height: 72px;
+  border: 0;
+  border-radius: 18px;
+  background: rgba(255, 255, 255, 0.96);
+  color: #151515;
+  font-size: 1.2rem;
+  cursor: pointer;
+  transition: transform 0.2s ease, box-shadow 0.2s ease, opacity 0.2s ease;
+  box-shadow: 0 12px 26px rgba(0, 0, 0, 0.08);
+}
+
+.login-submit:hover:not(:disabled) {
+  transform: translateY(-1px);
+  box-shadow: 0 16px 28px rgba(0, 0, 0, 0.12);
+}
+
+.login-submit:disabled {
+  cursor: not-allowed;
+  opacity: 0.72;
+}
+
+.login-redirect {
+  align-items: center;
+  text-align: center;
+}
+
+.login-redirect-text,
+.login-redirect-subtext {
+  margin: 0;
+  color: #ffffff;
+}
+
+.login-redirect-text {
+  font-size: 1.1rem;
+  font-weight: 600;
+}
+
+.login-redirect-subtext {
+  color: rgba(255, 255, 255, 0.78);
+}
+
+.login-brand-shell {
+  background: #ffffff;
+}
+
+@media (max-width: 1279px) {
+  .login-content {
+    grid-template-columns: minmax(320px, 35fr) minmax(0, 65fr);
+  }
+
+  .login-brand-shell {
+    gap: 18px;
+    padding: 36px 28px;
+  }
+
+  .login-brand-mark {
+    width: 118px;
+    height: 118px;
+  }
+
+  .login-form-anchor {
+    padding: 36px 28px;
+  }
+}
+
+@media (max-width: 767px) {
+  .login-scene {
+    min-height: 100vh;
+  }
+
+  .login-content {
+    grid-template-columns: 1fr;
+    gap: 0;
+    min-height: 100vh;
+    background: transparent;
+  }
+
+  .login-brand-shell {
+    order: 2;
+    width: 100%;
+    max-width: none;
+    margin: 0;
+    flex-direction: column;
+    text-align: center;
+    border-radius: 0;
+    padding: 36px 20px 32px;
+    background: #ffffff;
+  }
+
+  .login-brand-copy {
+    text-align: center;
+  }
+
+  .login-form-anchor {
+    order: 1;
+    padding: 16px 20px 28px;
+    background: var(--login-brand-color);
+  }
+
+  .login-form-panel,
+  .login-redirect {
+    max-width: none;
+  }
+
+  .login-form-title {
+    margin-bottom: 8px;
+  }
+
+  .login-input,
+  .login-submit {
+    height: 64px;
+    border-radius: 16px;
+  }
 }
 
 /* Minimal styling fallback for shadcn sidebar (no Tailwind in this project) */
