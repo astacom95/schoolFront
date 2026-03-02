@@ -110,82 +110,129 @@ export function LoginPageClient({ initialBranding }: LoginPageClientProps) {
 
   return (
     <section className="login-screen" style={loginStyle}>
-      <div className="login-scene">
-        <div className="login-content">
-          <div className="login-form-anchor">
-            {redirectRole ? (
-              <div className="login-redirect">
-                <h2 className="login-form-title">تسجيل الدخول</h2>
-                <p className="login-redirect-text">جارٍ تحويلك إلى {roleFriendlyNames[redirectRole]}...</p>
-                <p className="login-redirect-subtext">سيتم فتح لوحة التحكم حالاً.</p>
-              </div>
-            ) : (
-              <form className="login-form-panel" onSubmit={handleSubmit}>
-                <h2 className="login-form-title">تسجيل الدخول</h2>
-
-                <label className="login-field">
-                  <span className="login-field-icon login-field-icon--end" aria-hidden="true">
-                    <UserIcon />
-                  </span>
-                  <input
-                    className="login-input"
-                    name="userName"
-                    dir="ltr"
-                    value={credentials.userName}
-                    onChange={(event) => setCredentials((prev) => ({ ...prev, userName: event.target.value }))}
-                    placeholder="اسم المستخدم"
-                    autoComplete="username"
-                  />
-                </label>
-
-                <label className="login-field">
-                  <button
-                    type="button"
-                    className="login-field-toggle"
-                    onClick={() => setShowPassword((current) => !current)}
-                    aria-label={showPassword ? "إخفاء كلمة المرور" : "إظهار كلمة المرور"}
-                  >
-                    {showPassword ? <EyeOffIcon /> : <EyeIcon />}
-                  </button>
-                  <span className="login-field-icon login-field-icon--end" aria-hidden="true">
-                    <LockIcon />
-                  </span>
-                  <input
-                    className="login-input"
-                    type={showPassword ? "text" : "password"}
-                    name="password"
-                    dir="ltr"
-                    value={credentials.password}
-                    onChange={(event) => setCredentials((prev) => ({ ...prev, password: event.target.value }))}
-                    placeholder="كلمة المرور"
-                    autoComplete="current-password"
-                  />
-                </label>
-
-                {error ? <p className="login-error">{error}</p> : null}
-
-                <button className="login-submit" type="submit" disabled={submitting}>
-                  {submitting ? "جارٍ التحقق..." : "دخول"}
-                </button>
-              </form>
-            )}
+      <div className="login-shell">
+        <aside className="login-hero" aria-hidden="true">
+          <div className="login-hero-media">
+            <div className="login-hero-glow login-hero-glow--one" />
+            <div className="login-hero-glow login-hero-glow--two" />
+            <div className="login-hero-grid" />
           </div>
 
-          <div className="login-brand-shell">
-            <div className="login-brand-mark">
+          <div className="login-hero-overlay">
+            <div className="login-hero-branding">
+              <div className="login-brand-card">
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img
+                  src={logoSrc}
+                  alt={initialBranding.school_name}
+                  className="login-brand-logo"
+                  onError={() => setLogoSrc(DEFAULT_LOGO)}
+                />
+              </div>
+
+              <h1 className="login-hero-title">{initialBranding.school_name}</h1>
+              <p className="login-hero-slogan">{initialBranding.slogan}</p>
+            </div>
+
+            <div className="login-hero-quote">
+              <p className="login-hero-quote-text">"التعليم هو أقوى سلاح يمكنك استخدامه لتغيير العالم."</p>
+            </div>
+          </div>
+        </aside>
+
+        <div className="login-form-side">
+          <div className="login-mobile-branding">
+            <div className="login-mobile-brand-card">
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img
                 src={logoSrc}
                 alt={initialBranding.school_name}
-                className="login-brand-logo"
+                className="login-mobile-brand-logo"
                 onError={() => setLogoSrc(DEFAULT_LOGO)}
               />
             </div>
+            <h1 className="login-mobile-title">{initialBranding.school_name}</h1>
+            <p className="login-mobile-slogan">{initialBranding.slogan}</p>
+          </div>
 
-            <div className="login-brand-copy">
-              <h1 className="login-brand-title">{initialBranding.school_name}</h1>
-              <p className="login-brand-slogan">{initialBranding.slogan}</p>
-            </div>
+          <div className="login-form-wrap">
+            {redirectRole ? (
+              <div className="login-redirect">
+                <div className="login-form-header">
+                  <h2 className="login-form-title">تسجيل الدخول</h2>
+                </div>
+                <p className="login-redirect-text">جارٍ تحويلك إلى {roleFriendlyNames[redirectRole]}...</p>
+                <p className="login-redirect-subtext">سيتم فتح لوحة التحكم حالاً.</p>
+              </div>
+            ) : (
+              <div className="login-stack">
+                <div className="login-form-header">
+                  <h2 className="login-form-title">تسجيل الدخول</h2>
+                  <p className="login-form-subtitle">مرحباً بك مجدداً، يرجى إدخال بياناتك</p>
+                </div>
+
+                <form className="login-form-panel" onSubmit={handleSubmit}>
+                  <label className="login-field">
+                    <span className="login-field-label">اسم المستخدم</span>
+                    <div className="login-field-control">
+                      <span className="login-field-icon login-field-icon--end" aria-hidden="true">
+                        <UserIcon />
+                      </span>
+                      <input
+                        className="login-input"
+                        name="userName"
+                        dir="ltr"
+                        value={credentials.userName}
+                        onChange={(event) => setCredentials((prev) => ({ ...prev, userName: event.target.value }))}
+                        placeholder="system.manager"
+                        autoComplete="username"
+                      />
+                    </div>
+                  </label>
+
+                  <label className="login-field">
+                    <span className="login-field-label">كلمة المرور</span>
+                    <div className="login-field-control">
+                      <span className="login-field-icon login-field-icon--end" aria-hidden="true">
+                        <LockIcon />
+                      </span>
+                      <button
+                        type="button"
+                        className="login-field-toggle"
+                        onClick={() => setShowPassword((current) => !current)}
+                        aria-label={showPassword ? "إخفاء كلمة المرور" : "إظهار كلمة المرور"}
+                      >
+                        {showPassword ? <EyeOffIcon /> : <EyeIcon />}
+                      </button>
+                      <input
+                        className="login-input"
+                        type={showPassword ? "text" : "password"}
+                        name="password"
+                        dir="ltr"
+                        value={credentials.password}
+                        onChange={(event) => setCredentials((prev) => ({ ...prev, password: event.target.value }))}
+                        placeholder="••••••••••••"
+                        autoComplete="current-password"
+                      />
+                    </div>
+                  </label>
+
+                  {error ? <p className="login-error">{error}</p> : null}
+
+                  <button className="login-submit" type="submit" disabled={submitting}>
+                    {submitting ? "جارٍ التحقق..." : "دخول"}
+                  </button>
+                </form>
+
+                <div className="login-footer-note">
+                  <p className="login-footer-text">
+                    ليس لديك حساب؟
+                    {" "}
+                    <span className="login-footer-link">تواصل مع الإدارة</span>
+                  </p>
+                </div>
+              </div>
+            )}
           </div>
         </div>
       </div>
