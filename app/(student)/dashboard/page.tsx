@@ -100,7 +100,7 @@ type AttendanceOverview = {
 const attendanceChartConfig = {
   attendance: {
     label: "Attendance",
-    color: "#39559E",
+    color: "var(--color-sidebar-bg)",
   },
 } satisfies ChartConfig
 
@@ -249,7 +249,7 @@ export default function StudentDashboard() {
   }, [timetableEntries])
 
   const attendanceChartData = useMemo(() => {
-    return [{ name: "attendance", value: attendancePercent, fill: "#39559E" }]
+    return [{ name: "attendance", value: attendancePercent, fill: "var(--color-sidebar-bg)" }]
   }, [attendancePercent])
 
   const currentLesson = useMemo(() => {
