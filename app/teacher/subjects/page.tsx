@@ -152,7 +152,7 @@ export default function TeacherSubjectsPage() {
                       <Link
                         key={subject.id}
                          href={`/teacher/subjects/${subject.id}`}
-                        className="relative h-[357px] w-[254px] overflow-hidden rounded-lg shadow-sm"
+                        className="relative h-[357px] w-[254px] overflow-hidden rounded-sm shadow-sm"
                       >
                         {subject.imageUrl ? (
                           // eslint-disable-next-line @next/next/no-img-element
@@ -166,12 +166,12 @@ export default function TeacherSubjectsPage() {
                             لا يوجد غلاف
                           </div>
                         )}
-                        <div className="absolute inset-x-0 bottom-0 h-[98px] rounded-b-lg bg-gray-900" />
+                        <div className="absolute inset-x-0 bottom-0 h-[98px] rounded-b-lg bg-transparent bg-gradient-to-t from-black/5 to-transparent" />
                         <div className="absolute inset-x-0 bottom-0 h-[98px] px-4 py-3 text-white">
-                          <h3 className="mb-1 text-sm font-semibold text-white">
+                          <h3 className="mb-1 text-sm font-semibold text-black/90">
                             {subject.name}
                           </h3>
-                          <div className="space-y-1 text-[12px] font-semibold leading-[22px] text-white/90">
+                          <div className="space-y-1 text-[12px] font-semibold leading-[22px] text-black/90">
                             <div>المرحلة: {subject.level ?? "-"}</div>
                             <div className="flex flex-row gap-8">
                                   <div>الصف: {subject.class ?? "-"}</div>

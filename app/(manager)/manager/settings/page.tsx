@@ -12,8 +12,11 @@ type SchoolSetting = {
   id: number
   school_name?: string | null
   slogan?: string | null
+  description?: string | null
   school_logo?: string | null
   school_logo_url?: string | null
+  background_image?: string | null
+  background_image_url?: string | null
   school_color?: string | null
 }
 
@@ -26,9 +29,12 @@ export default function ManagerSettingsPage() {
   const [setting, setSetting] = useState<SchoolSetting | null>(null)
   const [schoolName, setSchoolName] = useState("")
   const [slogan, setSlogan] = useState("")
+  const [description, setDescription] = useState("")
   const [schoolColor, setSchoolColor] = useState(DEFAULT_SIDEBAR_COLOR)
   const [logoFile, setLogoFile] = useState<File | null>(null)
   const [logoPreview, setLogoPreview] = useState<string | null>(null)
+  const [backgroundImageFile, setBackgroundImageFile] = useState<File | null>(null)
+  const [backgroundImagePreview, setBackgroundImagePreview] = useState<string | null>(null)
   const [message, setMessage] = useState<{ text: string; variant: "success" | "error" } | null>(null)
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
@@ -57,8 +63,10 @@ export default function ManagerSettingsPage() {
         setSetting(currentSetting)
         setSchoolName(currentSetting?.school_name ?? "")
         setSlogan(currentSetting?.slogan ?? "")
+        setDescription(currentSetting?.description ?? "")
         setSchoolColor(currentSetting?.school_color ?? DEFAULT_SIDEBAR_COLOR)
         setLogoPreview(currentSetting?.school_logo_url ?? null)
+        setBackgroundImagePreview(currentSetting?.background_image_url ?? null)
       } catch (error) {
         console.error(error)
         if (!cancelled) {
@@ -84,8 +92,12 @@ export default function ManagerSettingsPage() {
       if (logoPreview?.startsWith("blob:")) {
         URL.revokeObjectURL(logoPreview)
       }
+
+      if (backgroundImagePreview?.startsWith("blob:")) {
+        URL.revokeObjectURL(backgroundImagePreview)
+      }
     }
-  }, [logoPreview])
+  }, [backgroundImagePreview, logoPreview])
 
   const handleLogoChange = (event: ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0] ?? null
@@ -104,6 +116,23 @@ export default function ManagerSettingsPage() {
     })
   }
 
+  const handleBackgroundImageChange = (event: ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0] ?? null
+    setBackgroundImageFile(file)
+
+    setBackgroundImagePreview((current) => {
+      if (current?.startsWith("blob:")) {
+        URL.revokeObjectURL(current)
+      }
+
+      if (!file) {
+        return setting?.background_image_url ?? null
+      }
+
+      return URL.createObjectURL(file)
+    })
+  }
+
   const handleSubmit = async (event: FormEvent) => {
     event.preventDefault()
     setMessage(null)
@@ -113,10 +142,15 @@ export default function ManagerSettingsPage() {
       const formData = new FormData()
       formData.append("school_name", schoolName)
       formData.append("slogan", slogan)
+      formData.append("description", description)
       formData.append("school_color", schoolColor || "")
 
       if (logoFile) {
         formData.append("school_logo", logoFile)
+      }
+
+      if (backgroundImageFile) {
+        formData.append("background_image", backgroundImageFile)
       }
 
       const res = await fetch(`${apiRoot}/manager/settings`, {
@@ -136,9 +170,12 @@ export default function ManagerSettingsPage() {
       setSetting(saved)
       setSchoolName(saved?.school_name ?? "")
       setSlogan(saved?.slogan ?? "")
+      setDescription(saved?.description ?? "")
       setSchoolColor(saved?.school_color ?? DEFAULT_SIDEBAR_COLOR)
       setLogoFile(null)
+      setBackgroundImageFile(null)
       setLogoPreview(saved?.school_logo_url ?? null)
+      setBackgroundImagePreview(saved?.background_image_url ?? null)
       document.documentElement.style.setProperty("--color-sidebar-bg", saved?.school_color ?? DEFAULT_SIDEBAR_COLOR)
       setMessage({ text: "تم حفظ الإعدادات بنجاح.", variant: "success" })
     } catch (error: any) {
@@ -183,6 +220,18 @@ export default function ManagerSettingsPage() {
           </div>
         </div>
 
+        <div className="flex flex-col gap-1">
+          <Label htmlFor="school-description" className="text-sm font-semibold">الوصف</Label>
+          <textarea
+            id="school-description"
+            value={description}
+            onChange={(event) => setDescription(event.target.value)}
+            placeholder="وصف المدرسة أو نص تعريفي يظهر في الواجهة"
+            disabled={loading || saving}
+            className="min-h-28 rounded-md border border-slate-200 bg-white px-3 py-2 text-sm text-slate-700 outline-none transition focus:ring-2 focus:ring-[var(--color-sidebar-bg)]/20"
+          />
+        </div>
+
         <div className="grid gap-5 md:grid-cols-2">
           <div className="flex flex-col gap-1">
             <Label htmlFor="school-color" className="text-sm font-semibold">لون الشريط الجانبي</Label>
@@ -223,6 +272,32 @@ export default function ManagerSettingsPage() {
                 <img src={logoPreview} alt="شعار المدرسة" className="h-full w-full object-contain p-3" />
               ) : (
                 <span className="text-sm text-slate-400">لا يوجد شعار محفوظ</span>
+              )}
+            </div>
+          </div>
+        </div>
+
+        <div className="grid gap-5 md:grid-cols-[minmax(0,1fr)_220px]">
+          <div className="flex flex-col gap-1">
+            <Label htmlFor="background-image" className="text-sm font-semibold">صورة الخلفية</Label>
+            <Input
+              id="background-image"
+              type="file"
+              accept=".jpg,.jpeg,.png,.webp,.svg"
+              onChange={handleBackgroundImageChange}
+              disabled={loading || saving}
+            />
+            <p className="text-xs text-slate-500">يدعم JPG و PNG و WEBP و SVG حتى 10MB.</p>
+          </div>
+
+          <div className="flex flex-col gap-2">
+            <Label className="text-sm font-semibold">معاينة الخلفية</Label>
+            <div className="flex h-40 items-center justify-center overflow-hidden rounded-xl border border-slate-200 bg-slate-50">
+              {backgroundImagePreview ? (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img src={backgroundImagePreview} alt="صورة الخلفية" className="h-full w-full object-cover" />
+              ) : (
+                <span className="text-sm text-slate-400">لا توجد صورة خلفية محفوظة</span>
               )}
             </div>
           </div>

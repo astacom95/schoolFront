@@ -4,6 +4,8 @@ const DEFAULT_SIDEBAR_COLOR = "#5783af";
 const DEFAULT_SCHOOL_NAME = "Online School";
 const DEFAULT_SLOGAN = "A smarter way to manage your school";
 const DEFAULT_LOGO = "/assets/logo.png";
+const DEFAULT_BACKGROUND_IMAGE = "/assets/schoolBack.jpg";
+const DEFAULT_DESCRIPTION = "التعليم هو أقوى سلاح يمكنك استخدامه لتغيير العالم.";
 
 type SettingsResponse = {
   data?: SchoolBranding | null;
@@ -18,6 +20,8 @@ function normalizeBranding(branding?: SchoolBranding | null): Required<SchoolBra
     school_name: branding?.school_name?.trim() || DEFAULT_SCHOOL_NAME,
     slogan: branding?.slogan?.trim() || DEFAULT_SLOGAN,
     school_logo_url: branding?.school_logo_url?.trim() || DEFAULT_LOGO,
+    background_image_url: branding?.background_image_url?.trim() || DEFAULT_BACKGROUND_IMAGE,
+    description: branding?.description?.trim() || DEFAULT_DESCRIPTION,
     school_color: resolveSchoolColor(branding?.school_color)
   };
 }

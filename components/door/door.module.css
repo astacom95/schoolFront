@@ -1,10 +1,11 @@
 .backDoor {
-  --door-bg: #2f3542;
+  --door-bg: var(--color-sidebar-bg, #2f3542);
+  --door-frame-bg: color-mix(in srgb, var(--color-sidebar-bg, #2f3542) 38%, #0f172a 62%);
   --door-accent: #2ed573;
   --door-text-light: #ffffff;
   --door-handle-gold: linear-gradient(145deg, #e6b980 0%, #ad8b41 100%);
 
-  background-color: #1e272e;
+  background-color: var(--door-frame-bg);
   position: relative;
   width: 220px;
   height: 320px;

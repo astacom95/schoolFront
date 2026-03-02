@@ -10,7 +10,9 @@ import { normalizeRole, rememberRole, roleFriendlyNames, roleRoutes, type UserRo
 export type SchoolBranding = {
   school_name?: string | null;
   slogan?: string | null;
+  description?: string | null;
   school_logo_url?: string | null;
+  background_image_url?: string | null;
   school_color?: string | null;
 };
 
@@ -32,6 +34,8 @@ type LoginPageClientProps = {
 };
 
 const DEFAULT_LOGO = "/assets/logo.png";
+const DEFAULT_BACKGROUND_IMAGE = "/assets/schoolBack.jpg";
+const DEFAULT_DESCRIPTION = "التعليم هو أقوى سلاح يمكنك استخدامه لتغيير العالم.";
 const initialCredentials: Credentials = { userName: "", password: "" };
 
 function hexToRgb(color: string): string {
@@ -52,11 +56,19 @@ export function LoginPageClient({ initialBranding }: LoginPageClientProps) {
   const [redirectRole, setRedirectRole] = useState<UserRole | null>(null);
   const [showPassword, setShowPassword] = useState(false);
   const [logoSrc, setLogoSrc] = useState(initialBranding.school_logo_url);
+  const [backgroundImageSrc, setBackgroundImageSrc] = useState(initialBranding.background_image_url || DEFAULT_BACKGROUND_IMAGE);
 
   useEffect(() => {
     setLogoSrc(initialBranding.school_logo_url);
+    setBackgroundImageSrc(initialBranding.background_image_url || DEFAULT_BACKGROUND_IMAGE);
     document.documentElement.style.setProperty("--color-sidebar-bg", initialBranding.school_color);
   }, [initialBranding]);
+
+  const togglePasswordVisibility = (event: React.MouseEvent<HTMLButtonElement>) => {
+    event.preventDefault();
+    event.stopPropagation();
+    setShowPassword((current) => !current);
+  };
 
   const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -113,6 +125,13 @@ export function LoginPageClient({ initialBranding }: LoginPageClientProps) {
       <div className="login-shell">
         <aside className="login-hero" aria-hidden="true">
           <div className="login-hero-media">
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
+              src={backgroundImageSrc}
+              alt=""
+              className="login-hero-image"
+              onError={() => setBackgroundImageSrc(DEFAULT_BACKGROUND_IMAGE)}
+            />
             <div className="login-hero-glow login-hero-glow--one" />
             <div className="login-hero-glow login-hero-glow--two" />
             <div className="login-hero-grid" />
@@ -135,7 +154,7 @@ export function LoginPageClient({ initialBranding }: LoginPageClientProps) {
             </div>
 
             <div className="login-hero-quote">
-              <p className="login-hero-quote-text">"التعليم هو أقوى سلاح يمكنك استخدامه لتغيير العالم."</p>
+              <p className="login-hero-quote-text">"{initialBranding.description || DEFAULT_DESCRIPTION}"</p>
             </div>
           </div>
         </aside>
@@ -190,8 +209,8 @@ export function LoginPageClient({ initialBranding }: LoginPageClientProps) {
                     </div>
                   </label>
 
-                  <label className="login-field">
-                    <span className="login-field-label">كلمة المرور</span>
+                  <div className="login-field">
+                    <label className="login-field-label" htmlFor="login-password">كلمة المرور</label>
                     <div className="login-field-control">
                       <span className="login-field-icon login-field-icon--end" aria-hidden="true">
                         <LockIcon />
@@ -199,12 +218,14 @@ export function LoginPageClient({ initialBranding }: LoginPageClientProps) {
                       <button
                         type="button"
                         className="login-field-toggle"
-                        onClick={() => setShowPassword((current) => !current)}
+                        onPointerDown={(event) => event.preventDefault()}
+                        onClick={togglePasswordVisibility}
                         aria-label={showPassword ? "إخفاء كلمة المرور" : "إظهار كلمة المرور"}
                       >
                         {showPassword ? <EyeOffIcon /> : <EyeIcon />}
                       </button>
                       <input
+                        id="login-password"
                         className="login-input"
                         type={showPassword ? "text" : "password"}
                         name="password"
@@ -215,7 +236,7 @@ export function LoginPageClient({ initialBranding }: LoginPageClientProps) {
                         autoComplete="current-password"
                       />
                     </div>
-                  </label>
+                  </div>
 
                   {error ? <p className="login-error">{error}</p> : null}
 
