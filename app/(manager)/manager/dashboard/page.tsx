@@ -4,6 +4,18 @@ import { useEffect, useMemo, useState } from "react"
 import { ChartAreaInteractive } from "@/components/chart-area-interactive"
 import { DataTable } from "@/components/data-table"
 import { SectionCards } from "@/components/section-cards"
+import { WeeklyLessonsBarChart } from "@/components/weekly-lessons-bar-chart"
+
+type LessonSummary = {
+  id: number
+  title: string
+  summary: string
+  subject_name: string
+  level_name: string
+  class_name: string
+  created_at?: string
+  has_media?: boolean
+}
 
 export default function ManagerDashboard() {
   const apiBase = useMemo(
@@ -17,7 +29,7 @@ export default function ManagerDashboard() {
   const [subjectsCount, setSubjectsCount] = useState(0)
   const [levelsCount, setLevelsCount] = useState(0)
   const [paymentsTotal, setPaymentsTotal] = useState(0)
-  const [lessonSummaries, setLessonSummaries] = useState<any[]>([])
+  const [lessonSummaries, setLessonSummaries] = useState<LessonSummary[]>([])
   const [quizzes, setQuizzes] = useState<any[]>([])
   const [papers, setPapers] = useState<any[]>([])
   const [reports, setReports] = useState<any[]>([])
@@ -156,6 +168,7 @@ export default function ManagerDashboard() {
           level_name: item.level_name ?? "",
           class_name: item.class_name ?? "",
           created_at: item.created_at ?? "",
+          has_media: Boolean(item.has_media),
         }))
         setLessonSummaries(normalized)
       } catch (error) {
@@ -262,7 +275,10 @@ export default function ManagerDashboard() {
         <div className="flex flex-col gap-4 py-4 md:gap-6 md:py-6">
           <SectionCards items={managerCards} />
           <div className="px-4 lg:px-6">
-            <ChartAreaInteractive />
+            <ChartAreaInteractive lessons={lessonSummaries} />
+          </div>
+          <div className="px-4 lg:px-6">
+            <WeeklyLessonsBarChart lessons={lessonSummaries} />
           </div>
           <div className="px-4 lg:px-6">
             <h2 className="text-sm font-semibold">أوراق العمل</h2>
