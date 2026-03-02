@@ -3,6 +3,10 @@ import { useEffect, useMemo, useState } from "react"
 
 import { ChartAreaInteractive } from "@/components/chart-area-interactive"
 import { DataTable } from "@/components/data-table"
+import {
+  PaymentsYearlyBarChart,
+  type PaymentsAnalytics,
+} from "@/components/payments-yearly-bar-chart"
 import { SectionCards } from "@/components/section-cards"
 import { WeeklyLessonsBarChart } from "@/components/weekly-lessons-bar-chart"
 
@@ -33,6 +37,9 @@ export default function ManagerDashboard() {
   const [quizzes, setQuizzes] = useState<any[]>([])
   const [papers, setPapers] = useState<any[]>([])
   const [reports, setReports] = useState<any[]>([])
+  const [paymentsAnalytics, setPaymentsAnalytics] = useState<PaymentsAnalytics | null>(null)
+  const [selectedPaymentsYear, setSelectedPaymentsYear] = useState("")
+  const [paymentsChartLoading, setPaymentsChartLoading] = useState(false)
   const [expandedReportId, setExpandedReportId] = useState<number | null>(null)
 
   const managerCards = useMemo(
@@ -251,6 +258,62 @@ export default function ManagerDashboard() {
     void loadReports()
   }, [apiRoot])
 
+  useEffect(() => {
+    const loadPaymentsAnalytics = async () => {
+      setPaymentsChartLoading(true)
+
+      try {
+        const query = selectedPaymentsYear
+          ? `?year=${encodeURIComponent(selectedPaymentsYear)}`
+          : ""
+        const res = await fetch(`${apiRoot}/manager/payments/analytics${query}`, {
+          cache: "no-store",
+        })
+        const json = await res.json()
+        const analytics = json?.data ?? null
+
+        if (!analytics) {
+          setPaymentsAnalytics(null)
+          return
+        }
+
+        const normalized: PaymentsAnalytics = {
+          selected_year: Number(analytics.selected_year ?? new Date().getFullYear()),
+          available_years: Array.isArray(analytics.available_years)
+            ? analytics.available_years.map((year: unknown) => Number(year)).filter(Number.isFinite)
+            : [new Date().getFullYear()],
+          year_total: Number(analytics.year_total ?? 0),
+          comparison_year:
+            analytics.comparison_year == null ? null : Number(analytics.comparison_year),
+          comparison_year_total:
+            analytics.comparison_year_total == null
+              ? null
+              : Number(analytics.comparison_year_total),
+          series: Array.isArray(analytics.series)
+            ? analytics.series.map((item: any) => ({
+                month: Number(item.month ?? 0),
+                month_label: item.month_label ?? "",
+                total_amount: Number(item.total_amount ?? 0),
+              }))
+            : [],
+        }
+
+        setPaymentsAnalytics(normalized)
+
+        if (!selectedPaymentsYear) {
+          setSelectedPaymentsYear(String(normalized.selected_year))
+        }
+      } catch (error) {
+        console.error("فشل جلب تحليلات المدفوعات", error)
+        setPaymentsAnalytics(null)
+      } finally {
+        setPaymentsChartLoading(false)
+      }
+    }
+
+    void loadPaymentsAnalytics()
+  }, [apiRoot, selectedPaymentsYear])
+
   const paperCards = useMemo(() => {
     const fileBaseUrl = apiBase.replace(/\/api\/?$/, "")
     return papers.map((paper: any) => {
@@ -279,6 +342,14 @@ export default function ManagerDashboard() {
           </div>
           <div className="px-4 lg:px-6">
             <WeeklyLessonsBarChart lessons={lessonSummaries} />
+          </div>
+          <div className="px-4 lg:px-6">
+            <PaymentsYearlyBarChart
+              data={paymentsAnalytics}
+              loading={paymentsChartLoading}
+              selectedYear={selectedPaymentsYear}
+              onYearChange={setSelectedPaymentsYear}
+            />
           </div>
           <div className="px-4 lg:px-6">
             <h2 className="text-sm font-semibold">أوراق العمل</h2>

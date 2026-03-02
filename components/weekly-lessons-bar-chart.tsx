@@ -115,7 +115,7 @@ export function WeeklyLessonsBarChart({ lessons }: WeeklyLessonsBarChartProps) {
   }, [lessons])
 
   return (
-    <Card className="mx-auto w-full max-w-3xl">
+    <Card className="mx-auto w-full max-w-4xl">
       <CardHeader>
         <CardTitle>الدروس المنشأة والمسجلة هذا الأسبوع</CardTitle>
         <CardDescription>مقارنة يومية خلال الأسبوع الحالي</CardDescription>
