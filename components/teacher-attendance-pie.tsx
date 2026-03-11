@@ -23,7 +23,7 @@ const chartConfig = {
   },
   present: {
     label: "حاضر",
-    color: "#4EE8D0",
+    color: "var(--color-sidebar-bg)",
   },
   absent: {
     label: "غياب",

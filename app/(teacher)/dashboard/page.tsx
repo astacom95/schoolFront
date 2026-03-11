@@ -1,4 +1,4 @@
-"use client"
+﻿"use client"
 
 import { Fragment, useEffect, useMemo, useState } from "react"
 
@@ -109,15 +109,7 @@ const teacherCards = [
     imageSrc: "/assets/Vector (2).svg",
     imageAlt: "التقارير",
   },
-  {
-    title: "الحضور",
-    value: "0",
-    footerTitle: "سجلات الحضور",
-    footerNote: "اخر مراجعة اليوم",
-    trend: "down" as const,
-    imageSrc: "/assets/Vector.svg",
-    imageAlt: "الحضور",
-  },
+,
 ]
 
 const timetableSlots = [
@@ -315,7 +307,7 @@ export default function TeacherDashboard() {
                           <span className="text-[11px] text-black text-center">{row.label}</span>
                           <div className="relative h-3 rounded-full bg-[#B0D2DE] overflow-hidden">
                             <div
-                              className="absolute inset-y-0 right-0 rounded-full bg-[#4EE8D0]"
+                              className="absolute inset-y-0 right-0 rounded-full bg-[var(--color-sidebar-bg)]"
                               style={{ width: `${row.value}%` }}
                             />
                           </div>
