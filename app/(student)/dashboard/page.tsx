@@ -87,6 +87,18 @@ type SubjectRow = {
   id: number
 }
 
+type LessonRow = {
+  id: number
+}
+
+type MonthlyTestRow = {
+  id: number
+}
+
+type GuidanceRow = {
+  id: number
+}
+
 type SubjectLesson = {
   id: number
   created_at?: string | null
@@ -108,7 +120,12 @@ export default function StudentDashboard() {
   const router = useRouter()
   const [timetableEntries, setTimetableEntries] = useState<TimetableEntry[]>([])
   const [timetableError, setTimetableError] = useState<string | null>(null)
-  const [subjectCount, setSubjectCount] = useState(0)
+  const [cardCounts, setCardCounts] = useState({
+    lessons: 0,
+    tests: 0,
+    subjects: 0,
+    guidance: 0,
+  })
   const [attendancePercent, setAttendancePercent] = useState(0)
   const [now, setNow] = useState(() => new Date())
   const [currentLessonTargetId, setCurrentLessonTargetId] = useState<number | null>(null)
@@ -129,16 +146,44 @@ export default function StudentDashboard() {
   }, [])
 
   useEffect(() => {
-    const loadSubjects = async () => {
+    const loadCardCounts = async () => {
       try {
-        const response = (await apiFetch("/student/subjects")) as { data?: SubjectRow[] }
-        const subjects = Array.isArray(response?.data) ? response.data : []
-        setSubjectCount(subjects.length)
+        const [subjectsResponse, lessonsResponse, testsResponse, guidanceResponse] = await Promise.all([
+          apiFetch("/student/subjects"),
+          apiFetch("/student/lessons"),
+          apiFetch("/student/monthly-tests"),
+          apiFetch("/student/guidance"),
+        ])
+
+        const subjects = Array.isArray((subjectsResponse as { data?: SubjectRow[] })?.data)
+          ? (subjectsResponse as { data?: SubjectRow[] }).data
+          : []
+        const lessons = Array.isArray((lessonsResponse as { data?: LessonRow[] })?.data)
+          ? (lessonsResponse as { data?: LessonRow[] }).data
+          : []
+        const tests = Array.isArray((testsResponse as { data?: MonthlyTestRow[] })?.data)
+          ? (testsResponse as { data?: MonthlyTestRow[] }).data
+          : []
+        const guidanceEntries = Array.isArray((guidanceResponse as { data?: GuidanceRow[] })?.data)
+          ? (guidanceResponse as { data?: GuidanceRow[] }).data
+          : []
+
+        setCardCounts({
+          lessons: lessons.length,
+          tests: tests.length,
+          subjects: subjects.length,
+          guidance: guidanceEntries.length,
+        })
       } catch {
-        setSubjectCount(0)
+        setCardCounts({
+          lessons: 0,
+          tests: 0,
+          subjects: 0,
+          guidance: 0,
+        })
       }
     }
-    void loadSubjects()
+    void loadCardCounts()
   }, [])
 
   useEffect(() => {
@@ -172,10 +217,22 @@ export default function StudentDashboard() {
   }, [])
 
   const studentCards = useMemo(() => {
-    return baseStudentCards.map((card) =>
-      card.title === "المواد الدراسية" ? { ...card, value: String(subjectCount) } : card,
-    )
-  }, [subjectCount])
+    return baseStudentCards.map((card) => {
+      if (card.title === "القاعة") {
+        return { ...card, value: String(cardCounts.lessons) }
+      }
+      if (card.title === "الاختبارات") {
+        return { ...card, value: String(cardCounts.tests) }
+      }
+      if (card.title === "المواد الدراسية") {
+        return { ...card, value: String(cardCounts.subjects) }
+      }
+      if (card.title === "الارشاد") {
+        return { ...card, value: String(cardCounts.guidance) }
+      }
+      return card
+    })
+  }, [cardCounts])
 
   const todayEnglish = new Intl.DateTimeFormat("en", { weekday: "long" }).format(now)
   const currentMinutes = now.getHours() * 60 + now.getMinutes()

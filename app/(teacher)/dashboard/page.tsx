@@ -72,46 +72,6 @@ const teacherNav = [
   },
 ]
 
-const teacherCards = [
-  {
-    title: "الطلاب",
-    value: "0",
-    footerTitle: "متابعة حضور الطلاب",
-    footerNote: "اخر تحديث اليوم",
-    trend: "none" as const,
-    imageSrc: "/assets/graduation-cap-line.svg",
-    imageAlt: "الطلاب",
-  },
-  {
-    title: "الدروس",
-    value: "0",
-    footerTitle: "دروس هذا الأسبوع",
-    footerNote: "جاهزة للبث",
-    trend: "up" as const,
-    imageSrc: "/assets/mdi_laptop-account.svg",
-    imageAlt: "الدروس",
-  },
-  {
-    title: "المواد",
-    value: "0",
-    footerTitle: "المواد الخاصة بك",
-    footerNote: "محدثة باستمرار",
-    trend: "none" as const,
-    imageSrc: "/assets/Vector (1).svg",
-    imageAlt: "المواد",
-  },
-  {
-    title: "التقارير",
-    value: "0",
-    footerTitle: "تقارير الأداء",
-    footerNote: "قيد الإعداد",
-    trend: "down" as const,
-    imageSrc: "/assets/Vector (2).svg",
-    imageAlt: "التقارير",
-  },
-,
-]
-
 const timetableSlots = [
   { label: "الاولى", start: "08:00", end: "09:00" },
   { label: "الثانية", start: "09:00", end: "10:00" },
@@ -146,6 +106,23 @@ type SubjectPlanRow = {
   name: string
   total_lessons?: number | null
   recorded_lessons?: number | null
+  class_id?: number | null
+}
+
+type LessonRow = {
+  id: number
+  has_media?: boolean
+}
+
+type StudentRow = {
+  id: number
+}
+
+type DashboardCounts = {
+  students: number
+  lessons: number
+  subjects: number
+  reports: number
 }
 
 export default function TeacherDashboard() {
@@ -153,6 +130,12 @@ export default function TeacherDashboard() {
   const [teacherPlanRows, setTeacherPlanRows] = useState<
     { id: number; label: string; value: number }[]
   >([])
+  const [dashboardCounts, setDashboardCounts] = useState<DashboardCounts>({
+    students: 0,
+    lessons: 0,
+    subjects: 0,
+    reports: 0,
+  })
 
   useEffect(() => {
     const loadTimetable = async () => {
@@ -167,6 +150,8 @@ export default function TeacherDashboard() {
   }, [])
 
   useEffect(() => {
+    let cancelled = false
+
     const loadPlan = async () => {
       try {
         const response = (await apiFetch("/teacher/subjects")) as { data?: SubjectPlanRow[] }
@@ -182,13 +167,98 @@ export default function TeacherDashboard() {
             value: percent,
           }
         })
+        if (cancelled) return
         setTeacherPlanRows(mapped)
+
+        const classIds = [...new Set(rows.map((row) => Number(row.class_id)).filter((id) => id > 0))]
+
+        const [lessonsResponse, studentResponses] = await Promise.all([
+          apiFetch("/teacher/lessons"),
+          Promise.all(classIds.map((classId) => apiFetch(`/teacher/students?class_id=${classId}`))),
+        ])
+
+        if (cancelled) return
+
+        const lessons = Array.isArray((lessonsResponse as { data?: LessonRow[] })?.data)
+          ? (lessonsResponse as { data?: LessonRow[] }).data
+          : []
+
+        const studentIdSet = new Set<number>()
+        studentResponses.forEach((response) => {
+          const students = Array.isArray((response as { data?: StudentRow[] })?.data)
+            ? (response as { data?: StudentRow[] }).data
+            : []
+          students.forEach((student) => {
+            const id = Number(student.id)
+            if (id > 0) studentIdSet.add(id)
+          })
+        })
+
+        setDashboardCounts({
+          students: studentIdSet.size,
+          lessons: lessons.length,
+          subjects: rows.length,
+          reports: lessons.filter((lesson) => lesson.has_media).length,
+        })
       } catch {
+        if (cancelled) return
         setTeacherPlanRows([])
+        setDashboardCounts({
+          students: 0,
+          lessons: 0,
+          subjects: 0,
+          reports: 0,
+        })
       }
     }
     void loadPlan()
+
+    return () => {
+      cancelled = true
+    }
   }, [])
+
+  const teacherCards = useMemo(
+    () => [
+      {
+        title: "الطلاب",
+        value: String(dashboardCounts.students),
+        footerTitle: "متابعة حضور الطلاب",
+        footerNote: "اخر تحديث اليوم",
+        trend: "none" as const,
+        imageSrc: "/assets/graduation-cap-line.svg",
+        imageAlt: "الطلاب",
+      },
+      {
+        title: "الدروس",
+        value: String(dashboardCounts.lessons),
+        footerTitle: "دروس هذا الأسبوع",
+        footerNote: "جاهزة للبث",
+        trend: "up" as const,
+        imageSrc: "/assets/mdi_laptop-account.svg",
+        imageAlt: "الدروس",
+      },
+      {
+        title: "المواد",
+        value: String(dashboardCounts.subjects),
+        footerTitle: "المواد الخاصة بك",
+        footerNote: "محدثة باستمرار",
+        trend: "none" as const,
+        imageSrc: "/assets/Vector (1).svg",
+        imageAlt: "المواد",
+      },
+      {
+        title: "التقارير",
+        value: String(dashboardCounts.reports),
+        footerTitle: "تقارير الأداء",
+        footerNote: "قيد الإعداد",
+        trend: "down" as const,
+        imageSrc: "/assets/Vector (2).svg",
+        imageAlt: "التقارير",
+      },
+    ],
+    [dashboardCounts],
+  )
 
   const todayEnglish = new Intl.DateTimeFormat("en", { weekday: "long" }).format(new Date())
   const currentMinutes = new Date().getHours() * 60 + new Date().getMinutes()
