@@ -112,7 +112,7 @@ export function PaymentsYearlyBarChart({
         </Select>
       </CardHeader>
       <CardContent>
-        <ChartContainer config={chartConfig} className="h-[320px] w-full">
+        <ChartContainer config={chartConfig} className="h-[320px] text-md w-full">
           <BarChart
             accessibilityLayer
             data={data?.series ?? []}

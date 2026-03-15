@@ -124,7 +124,7 @@ export function DataTable({
       <div className="flex flex-col gap-4 p-4">
         {!(printFriendly && isPrinting) && (
           <div className="flex items-center justify-between gap-3 flex-wrap">
-            <h3 className="text-base font-semibold text-slate-900">{title}</h3>
+            <h3 className="text-lg font-serif font-semibold text-slate-900">{title}</h3>
             <div className="flex items-center gap-2 flex-wrap">
               <Input
                 placeholder="ابحث بالاسم أو البريد أو الرقم"
@@ -147,22 +147,22 @@ export function DataTable({
             <Table className="text-right">
               <TableHeader>
                 <TableRow>
-                  <TableHead className="text-right">الاسم الكامل</TableHead>
-                  <TableHead className="text-right">البريد</TableHead>
-                  <TableHead className="text-right">رقم الهاتف</TableHead>
+                  <TableHead className="text-right text-md">الاسم الكامل</TableHead>
+                  <TableHead className="text-right text-md">البريد</TableHead>
+                  <TableHead className="text-right text-md">رقم الهاتف</TableHead>
                   {showLevelClassColumns && (
                     <>
-                      <TableHead className="text-right">المستوى</TableHead>
-                      <TableHead className="text-right">الفصل</TableHead>
+                      <TableHead className="text-right text-md">المستوى</TableHead>
+                      <TableHead className="text-right text-md">الفصل</TableHead>
                     </>
                   )}
-                  <TableHead className="text-right">الجنس</TableHead>
+                  <TableHead className="text-right text-md">الجنس</TableHead>
                   {showFinanceColumns && (
                     <>
-                      <TableHead className="text-right">المبلغ المدفوع</TableHead>
-                      <TableHead className="text-right">المبلغ الكامل</TableHead>
-                      <TableHead className="text-right">المبلغ المتبقي</TableHead>
-                      <TableHead className="text-right">الحالة المالية</TableHead>
+                      <TableHead className="text-right text-md">المبلغ المدفوع</TableHead>
+                      <TableHead className="text-right text-md">المبلغ الكامل</TableHead>
+                      <TableHead className="text-right text-md">المبلغ المتبقي</TableHead>
+                      <TableHead className="text-right text-md">الحالة المالية</TableHead>
                     </>
                   )}
                 </TableRow>
@@ -171,11 +171,11 @@ export function DataTable({
                 {visibleRows.map((row) => (
                   <TableRow
                     key={row.id}
-                    className="text-right cursor-pointer transition-colors data-[selected=true]:bg-slate-100 hover:bg-slate-50"
+                    className="text-right  cursor-pointer transition-colors data-[selected=true]:bg-slate-100 hover:bg-slate-50"
                     data-selected={selectedId === row.id}
                     onClick={() => onSelectRow?.(row)}
                   >
-                    <TableCell className="font-medium">{row.full_name}</TableCell>
+                    <TableCell className="text-lg">{row.full_name}</TableCell>
                     <TableCell>{row.email || "—"}</TableCell>
                     <TableCell>{row.phone_number || "—"}</TableCell>
                     {showLevelClassColumns && (

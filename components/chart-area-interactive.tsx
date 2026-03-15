@@ -134,7 +134,7 @@ export function ChartAreaInteractive({ lessons }: ChartAreaInteractiveProps) {
       <CardContent className="pb-0">
         <ChartContainer
           config={chartConfig}
-          className="mx-auto aspect-square max-h-[320px] w-full"
+          className="mx-auto text-md aspect-square max-h-[320px] w-full"
         >
           <RadarChart data={chartData}>
             <ChartTooltip
@@ -148,7 +148,7 @@ export function ChartAreaInteractive({ lessons }: ChartAreaInteractiveProps) {
                 />
               }
             />
-            <PolarAngleAxis dataKey="month" />
+            <PolarAngleAxis dataKey="month"/>
             <PolarGrid />
             <Radar
               dataKey="lessons"
@@ -161,7 +161,7 @@ export function ChartAreaInteractive({ lessons }: ChartAreaInteractiveProps) {
           </RadarChart>
         </ChartContainer>
       </CardContent>
-      <CardFooter className="flex-col gap-2 text-sm">
+      <CardFooter className="flex-col gap-2 text-md">
         <div className="flex items-center gap-2 leading-none font-medium">
           {trend}
           <TrendingUp className="h-4 w-4" />

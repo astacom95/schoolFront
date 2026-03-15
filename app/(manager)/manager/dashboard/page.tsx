@@ -48,7 +48,6 @@ export default function ManagerDashboard() {
         title: "الطلاب",
         value: String(students.length),
         footerTitle: "متابعة حضور الطلاب",
-        footerNote: "اخر تحديث اليوم",
         trend: "none" as const,
         imageSrc: "/assets/graduation-cap-line.svg",
         imageAlt: "الطلاب",
@@ -57,7 +56,6 @@ export default function ManagerDashboard() {
         title: "المعلمين",
         value: String(teachersCount),
         footerTitle: "توزيع المعلمين على الفصول",
-        footerNote: "جاهز للمراجعة",
         trend: "up" as const,
         imageSrc: "/assets/mdi_laptop-account.svg",
         imageAlt: "المعلمين",
@@ -66,7 +64,6 @@ export default function ManagerDashboard() {
         title: "المواد",
         value: String(subjectsCount),
         footerTitle: "المحتوى الأكاديمي",
-        footerNote: "قيد المراجعة",
         trend: "none" as const,
         imageSrc: "/assets/Vector (1).svg",
         imageAlt: "المواد",
@@ -75,7 +72,6 @@ export default function ManagerDashboard() {
         title: "المستويات",
         value: String(levelsCount),
         footerTitle: "إدارة الهيكل الدراسي",
-        footerNote: "محدث باستمرار",
         trend: "down" as const,
         imageSrc: "/assets/Vector (2).svg",
         imageAlt: "المستويات",
@@ -84,7 +80,6 @@ export default function ManagerDashboard() {
         title: "الرسوم",
         value: paymentsTotal.toLocaleString(),
         footerTitle: "متابعة الرسوم والمدفوعات",
-        footerNote: "آخر مراجعة اليوم",
         trend: "down" as const,
         imageSrc: "/assets/Vector.svg",
         imageAlt: "الرسوم",
@@ -352,7 +347,7 @@ export default function ManagerDashboard() {
             />
           </div>
           <div className="px-4 lg:px-6">
-            <h2 className="text-sm font-semibold">أوراق العمل</h2>
+            <h2 className="text-lg font-serif  font-semibold">أوراق العمل</h2>
             {paperCards.length === 0 ? (
               <div className="card mt-4">لا توجد أوراق عمل حالياً.</div>
             ) : (
@@ -411,7 +406,7 @@ export default function ManagerDashboard() {
           </div>
           <div className="px-4 lg:px-6">
             <div className="rounded-2xl border border-slate-100 bg-white p-5 shadow-sm">
-              <div className="mb-4 text-sm font-semibold">ملخصات الدروس</div>
+              <div className="mb-4 text-lg font-serif font-semibold">ملخصات الدروس</div>
               <div className="max-h-[420px] overflow-auto rounded-xl border border-slate-200">
                 <table className="w-full text-sm">
                   <thead className="bg-slate-50 text-slate-600">
@@ -451,7 +446,7 @@ export default function ManagerDashboard() {
           </div>
           <div className="px-4 lg:px-6">
             <div className="rounded-2xl border border-slate-100 bg-white p-5 shadow-sm">
-              <div className="mb-4 text-sm font-semibold">تدريبات الدروس</div>
+              <div className="mb-4 text-lg font-serif font-semibold">تدريبات الدروس</div>
               <div className="max-h-[420px] overflow-auto rounded-xl border border-slate-200">
                 <table className="w-full text-sm">
                   <thead className="bg-slate-50 text-slate-600">
@@ -504,7 +499,7 @@ export default function ManagerDashboard() {
           </div>
           <div className="px-4 lg:px-6">
             <div className="rounded-2xl border border-slate-100 bg-white p-5 shadow-sm">
-              <div className="mb-4 text-sm font-semibold">تقارير الطلاب</div>
+              <div className="mb-4 text-lg font-serif font-semibold">تقارير الطلاب</div>
               <div className="max-h-[420px] overflow-auto rounded-xl border border-slate-200">
                 <table className="w-full text-sm">
                   <thead className="bg-slate-50 text-slate-600">

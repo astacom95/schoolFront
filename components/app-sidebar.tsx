@@ -19,7 +19,6 @@ import {
 import Link from "next/link"
 
 import { NavMain } from "@/components/nav-main"
-import { NavSecondary } from "@/components/nav-secondary"
 import { NavUser } from "@/components/nav-user"
 import {
   Sidebar,
@@ -116,25 +115,14 @@ const data = {
       url: "/manager/reports",
       icon: FileTextIcon,
     },
-  
-  ],
-  navSecondary: [
-    {
+     {
       title: "الإعدادات",
       url: "/manager/settings",
       icon: SettingsIcon,
     },
-    {
-      title: "مساعدة",
-      url: "#",
-      icon: HelpCircleIcon,
-    },
-    {
-      title: "بحث",
-      url: "#",
-      icon: SearchIcon,
-    },
+  
   ],
+  
 }
 
 type SchoolSetting = {
@@ -184,9 +172,9 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
       <SidebarHeader>
         <Link
           href="/manager/dashboard"
-          className="flex items-center gap-3 rounded-2xl bg-white px-3 py-3 text-slate-900 shadow-sm"
+          className="flex flex-col items-center  rounded-2xl  px-3  text-white shadow-sm"
         >
-          <div className="flex h-14 w-14 items-center justify-center overflow-hidden rounded-xl shrink-0">
+          <div className="flex h-32 w-32 items-center justify-center overflow-hidden rounded-xl shrink-0">
             {setting?.school_logo_url ? (
               // eslint-disable-next-line @next/next/no-img-element
               <img src={setting.school_logo_url} alt={setting.school_name ?? "School logo"} className="h-full w-full rounded-[12px] object-contain" />
@@ -197,8 +185,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
             )}
           </div>
           <div className="min-w-0">
-            <div className="truncate text-sm text-slate-500">المدرسة</div>
-            <div className="truncate text-base font-semibold">
+            <div className="truncate text-xl  font-semibold">
               {setting?.school_name?.trim() || "اسم المدرسة"}
             </div>
           </div>
@@ -206,10 +193,9 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
       </SidebarHeader>
       <SidebarContent>
         <NavMain items={data.navMain} />
-        <NavSecondary items={data.navSecondary} className="mt-auto" />
       </SidebarContent>
       <SidebarFooter className="p-3">
-        <div className="rounded-2xl bg-white p-2 shadow-sm">
+        <div className="rounded-md bg-white p-2 shadow-sm">
           <NavUser
             user={data.user}
             buttonClassName="bg-white text-slate-900 hover:bg-slate-50 data-[state=open]:bg-slate-50 data-[state=open]:text-slate-900"

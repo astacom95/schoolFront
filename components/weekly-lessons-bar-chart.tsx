@@ -121,7 +121,7 @@ export function WeeklyLessonsBarChart({ lessons }: WeeklyLessonsBarChartProps) {
         <CardDescription>مقارنة يومية خلال الأسبوع الحالي</CardDescription>
       </CardHeader>
       <CardContent>
-        <ChartContainer config={chartConfig} className="h-[240px] w-full">
+        <ChartContainer config={chartConfig} className="h-[240px] text-md w-full">
           <BarChart accessibilityLayer data={chartData}>
             <XAxis
               dataKey="date"
