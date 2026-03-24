@@ -49,11 +49,15 @@ export default function LevelsPage() {
     setClasses((rows) => [...rows, { id: crypto.randomUUID(), name: "", number_of_subjects: 0 }])
   }
 
-  const removeClassRow = (id: string) => {
+  const removeClassRow = (id: string | number) => {
     setClasses((rows) => (rows.length > 1 ? rows.filter((r) => r.id !== id) : rows))
   }
 
-  const updateClassRow = (id: string, key: keyof ClassPayload, value: string | number) => {
+  const updateClassRow = <K extends keyof Omit<ClassPayload, "id">>(
+    id: string | number,
+    key: K,
+    value: ClassPayload[K],
+  ) => {
     setClasses((rows) =>
       rows.map((row) => (row.id === id ? { ...row, [key]: value } : row))
     )
@@ -155,7 +159,11 @@ export default function LevelsPage() {
     setEditingClasses((rows) => (rows.length > 1 ? rows.filter((row) => row.id !== id) : rows))
   }
 
-  const updateEditingClassRow = (id: string | number, key: keyof ClassPayload, value: string | number) => {
+  const updateEditingClassRow = <K extends keyof Omit<ClassPayload, "id">>(
+    id: string | number,
+    key: K,
+    value: ClassPayload[K],
+  ) => {
     setEditingClasses((rows) =>
       rows.map((row) => (row.id === id ? { ...row, [key]: value } : row))
     )

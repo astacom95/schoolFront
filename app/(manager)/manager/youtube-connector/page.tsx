@@ -1,6 +1,7 @@
 "use client"
 
 import { useMemo } from "react"
+import { Suspense } from "react"
 import { useSearchParams } from "next/navigation"
 
 import { Button } from "@/components/ui/button"
@@ -13,7 +14,7 @@ const statusCopy: Record<string, string> = {
   missing_refresh_token: "لم يتم استلام رمز التحديث. يرجى إعادة المحاولة.",
 }
 
-export default function YouTubeConnectorPage() {
+function YouTubeConnectorContent() {
   const searchParams = useSearchParams()
   const status = searchParams.get("status") ?? ""
   const statusMessage = statusCopy[status]
@@ -60,5 +61,13 @@ export default function YouTubeConnectorPage() {
             </div>
       </div>
     </div>
+  )
+}
+
+export default function YouTubeConnectorPage() {
+  return (
+    <Suspense fallback={<div className="flex flex-1 flex-col" />}>
+      <YouTubeConnectorContent />
+    </Suspense>
   )
 }

@@ -505,7 +505,9 @@ export default function ManagerStudentsPage() {
                   id="student-gender"
                   className="h-10 rounded-md border border-slate-200 bg-white px-3 text-sm"
                   value={editForm.gender}
-                  onChange={(e) => handleEditFormChange("gender", e.target.value)}
+                  onChange={(e) =>
+                    handleEditFormChange("gender", e.target.value === "Female" ? "Female" : "Male")
+                  }
                 >
                   <option value="Male">ذكر</option>
                   <option value="Female">أنثى</option>
