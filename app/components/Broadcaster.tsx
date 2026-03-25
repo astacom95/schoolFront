@@ -32,13 +32,36 @@ export default function Broadcaster({ whipUrl, onStop }: BroadcasterProps) {
       setError(null)
       setPublishing(true)
 
-      const stream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true })
+      const stream = await navigator.mediaDevices.getUserMedia({
+        video: true,
+        audio: {
+          echoCancellation: true,
+          noiseSuppression: true,
+          autoGainControl: true,
+          channelCount: { ideal: 1 },
+          sampleRate: { ideal: 48000 },
+          sampleSize: { ideal: 16 },
+        },
+      })
       if (videoRef.current) videoRef.current.srcObject = stream
 
       const pc = new RTCPeerConnection()
       pcRef.current = pc
 
-      stream.getTracks().forEach((track) => pc.addTrack(track, stream))
+      stream.getTracks().forEach((track) => {
+        if (track.kind === "audio") {
+          track.contentHint = "speech"
+        }
+        pc.addTrack(track, stream)
+      })
+
+      const audioSender = pc.getSenders().find((sender) => sender.track?.kind === "audio")
+      if (audioSender) {
+        const params = audioSender.getParameters()
+        params.encodings = params.encodings?.length ? params.encodings : [{}]
+        params.encodings[0].maxBitrate = 64000
+        await audioSender.setParameters(params)
+      }
 
       const offer = await pc.createOffer()
       await pc.setLocalDescription(offer)
