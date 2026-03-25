@@ -13,6 +13,54 @@ export default function Broadcaster({ whipUrl, onStop }: BroadcasterProps) {
   const [publishing, setPublishing] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
+  const tuneOpusSdp = (sdp: string): string => {
+    const lines = sdp.split("\r\n")
+    const opusRtpMap = lines.find((line) => /^a=rtpmap:(\d+)\s+opus\/48000\/2$/i.test(line))
+    if (!opusRtpMap) return sdp
+
+    const payloadType = opusRtpMap.match(/^a=rtpmap:(\d+)/i)?.[1]
+    if (!payloadType) return sdp
+
+    const fmtpPrefix = `a=fmtp:${payloadType} `
+    const fmtpIndex = lines.findIndex((line) => line.startsWith(fmtpPrefix))
+    const desiredParams: Record<string, string> = {
+      minptime: "10",
+      ptime: "20",
+      maxaveragebitrate: "48000",
+      useinbandfec: "1",
+      usedtx: "0",
+      stereo: "0",
+    }
+
+    if (fmtpIndex >= 0) {
+      const existing = lines[fmtpIndex].slice(fmtpPrefix.length).trim()
+      const merged = existing.split(";").reduce<Record<string, string>>((acc, item) => {
+        const [rawKey, rawValue] = item.split("=")
+        const key = rawKey?.trim()
+        const value = rawValue?.trim()
+        if (key && value) acc[key] = value
+        return acc
+      }, {})
+      Object.assign(merged, desiredParams)
+      const mergedLine = Object.entries(merged)
+        .map(([key, value]) => `${key}=${value}`)
+        .join(";")
+      lines[fmtpIndex] = `${fmtpPrefix}${mergedLine}`
+    } else {
+      const insertAfter = lines.findIndex((line) => line.startsWith(`a=rtpmap:${payloadType} `))
+      const fmtpLine = `${fmtpPrefix}${Object.entries(desiredParams)
+        .map(([key, value]) => `${key}=${value}`)
+        .join(";")}`
+      if (insertAfter >= 0) {
+        lines.splice(insertAfter + 1, 0, fmtpLine)
+      } else {
+        lines.push(fmtpLine)
+      }
+    }
+
+    return lines.join("\r\n")
+  }
+
   const cleanup = () => {
     const pc = pcRef.current
     pcRef.current = null
@@ -59,11 +107,12 @@ export default function Broadcaster({ whipUrl, onStop }: BroadcasterProps) {
       if (audioSender) {
         const params = audioSender.getParameters()
         params.encodings = params.encodings?.length ? params.encodings : [{}]
-        params.encodings[0].maxBitrate = 96000
+        params.encodings[0].maxBitrate = 48000
         await audioSender.setParameters(params)
       }
 
       const offer = await pc.createOffer()
+      offer.sdp = offer.sdp ? tuneOpusSdp(offer.sdp) : offer.sdp
       await pc.setLocalDescription(offer)
 
       const res = await fetch(whipUrl, {
