@@ -13,9 +13,16 @@ This scaffold mirrors the personas and modules in the PRD. It uses the `app` rou
 - `styles/` — Global styles.
 
 ## Environment (expected)
-- `NEXT_PUBLIC_API_BASE_URL` — Points to Laravel API gateway.
+- `NEXT_PUBLIC_API_URL` — App/backend root URL (with or without `/api`; frontend normalizes both).
+- `NEXT_PUBLIC_API_BASE_URL` — Laravel API gateway (with or without `/api`; frontend normalizes both).
 - `NEXT_PUBLIC_CLOUDFLARE_ACCOUNT_ID` — For client-side Stream player initialization.
 - `CLOUDFLARE_SIGNING_KEY` — For signed playback tokens (server side).
+
+Production example:
+```env
+NEXT_PUBLIC_API_URL=https://api.oschool.net/api
+NEXT_PUBLIC_API_BASE_URL=https://api.oschool.net/api
+```
 
 ## Next steps
 1) Run `npm install next react react-dom` (or `pnpm`/`yarn`), then `npm run dev`.

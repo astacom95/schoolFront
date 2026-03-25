@@ -1,8 +1,13 @@
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:8000/api";
+const RAW_API_BASE_URL = (process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:8000/api").replace(/\/+$/, "");
+const API_BASE_URL = RAW_API_BASE_URL.endsWith("/api") ? RAW_API_BASE_URL : `${RAW_API_BASE_URL}/api`;
+
+function normalizePath(path: string): string {
+  return path.startsWith("/") ? path : `/${path}`;
+}
 
 export async function apiFetch(path: string, init?: RequestInit) {
   const token = typeof window !== "undefined" ? window.localStorage.getItem("authToken") : null;
-  const response = await fetch(`${API_BASE_URL}${path}`, {
+  const response = await fetch(`${API_BASE_URL}${normalizePath(path)}`, {
     ...init,
     headers: {
       "Content-Type": "application/json",

@@ -12,7 +12,9 @@ export default function LoginPage() {
   const [devLoading, setDevLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const API = process.env.NEXT_PUBLIC_API_URL ?? "http://127.0.0.1:8000";
+  const rawApi = (process.env.NEXT_PUBLIC_API_URL ?? "http://127.0.0.1:8000").replace(/\/+$/, "");
+  const apiRoot = rawApi.endsWith("/api") ? rawApi : `${rawApi}/api`;
+  const appRoot = rawApi.endsWith("/api") ? rawApi.slice(0, -4) : rawApi;
 
   const onSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -20,12 +22,12 @@ export default function LoginPage() {
     setError(null);
 
     try {
-      await fetch(`${API}/sanctum/csrf-cookie`, {
+      await fetch(`${appRoot}/sanctum/csrf-cookie`, {
         method: "GET",
         credentials: "include",
       });
 
-      const res = await fetch(`${API}/api/auth/login`, {
+      const res = await fetch(`${apiRoot}/auth/login`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -55,7 +57,7 @@ export default function LoginPage() {
     setError(null);
 
     try {
-      const res = await fetch(`${API}/api/dev-token`, {
+      const res = await fetch(`${apiRoot}/dev-token`, {
         method: "POST",
         headers: { Accept: "application/json" },
       });
