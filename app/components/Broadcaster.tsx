@@ -37,7 +37,7 @@ export default function Broadcaster({ whipUrl, onStop }: BroadcasterProps) {
         audio: {
           echoCancellation: true,
           noiseSuppression: true,
-          autoGainControl: true,
+          autoGainControl: false,
           channelCount: { ideal: 1 },
           sampleRate: { ideal: 48000 },
           sampleSize: { ideal: 16 },
@@ -59,7 +59,7 @@ export default function Broadcaster({ whipUrl, onStop }: BroadcasterProps) {
       if (audioSender) {
         const params = audioSender.getParameters()
         params.encodings = params.encodings?.length ? params.encodings : [{}]
-        params.encodings[0].maxBitrate = 64000
+        params.encodings[0].maxBitrate = 96000
         await audioSender.setParameters(params)
       }
 
