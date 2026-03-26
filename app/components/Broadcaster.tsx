@@ -82,18 +82,19 @@ export default function Broadcaster({ whipUrl, onStop }: BroadcasterProps) {
 
       const audioConstraints: MediaTrackConstraints & Record<string, unknown> = {
         echoCancellation: { ideal: true },
-        noiseSuppression: { ideal: true },
-        autoGainControl: { ideal: true },
+        noiseSuppression: { ideal: false },
+        autoGainControl: { ideal: false },
         channelCount: { ideal: 1 },
         sampleRate: { ideal: 48000 },
         sampleSize: { ideal: 16 },
+        latency: { ideal: 0.01 },
       }
 
       // Chromium-only legacy constraints. Non-chromium browsers simply ignore these keys.
       if (typeof navigator !== "undefined" && /Chrome|Chromium|Edg\//.test(navigator.userAgent)) {
         audioConstraints.googEchoCancellation = true
-        audioConstraints.googNoiseSuppression = true
-        audioConstraints.googAutoGainControl = true
+        audioConstraints.googNoiseSuppression = false
+        audioConstraints.googAutoGainControl = false
       }
 
       const stream = await navigator.mediaDevices.getUserMedia({
