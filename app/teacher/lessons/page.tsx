@@ -15,7 +15,6 @@ import Link from "next/link"
 import { apiFetch } from "@/lib/api/client"
 import { NavMain } from "@/components/nav-main"
 import { SectionCards } from "@/components/section-cards"
-import Broadcaster from "@/app/components/Broadcaster"
 import {
   Sidebar,
   SidebarContent,
@@ -64,6 +63,12 @@ type TeacherInfo = {
     level_name?: string | null
     class_name?: string | null
   }[]
+}
+
+type ObsCredentials = {
+  rtmp_server_url: string
+  stream_key: string
+  full_ingest_url: string
 }
 
 const teacherNav = [
@@ -121,7 +126,8 @@ export default function TeacherLessonsPage() {
   const [lessonError, setLessonError] = useState<string | null>(null)
   const [startingLessonId, setStartingLessonId] = useState<number | null>(null)
   const [broadcastLessonId, setBroadcastLessonId] = useState<number | null>(null)
-  const [whipUrl, setWhipUrl] = useState<string | null>(null)
+  const [obsCredentials, setObsCredentials] = useState<ObsCredentials | null>(null)
+  const [copiedField, setCopiedField] = useState<"server" | "key" | "full" | null>(null)
   const [broadcastError, setBroadcastError] = useState<string | null>(null)
 
   useEffect(() => {
@@ -169,37 +175,59 @@ export default function TeacherLessonsPage() {
     }))
   }, [subjects])
 
-  const handleStartBrowserLive = async (lessonId: number) => {
+  const handleStartObsLive = async (lessonId: number) => {
     try {
       setStartingLessonId(lessonId)
       setBroadcastError(null)
       setBroadcastLessonId(lessonId)
+      setObsCredentials(null)
+      setCopiedField(null)
       await apiFetch(`/teacher/lessons/${lessonId}/start-live-youtube`, {
         method: "POST",
       })
-      const response = (await apiFetch(`/teacher/lessons/${lessonId}/whip`)) as {
-        whipUrl?: string
-        whip_url?: string
+      const response = (await apiFetch(`/teacher/lessons/${lessonId}/obs`)) as {
+        rtmp_server_url?: string
+        stream_key?: string
+        full_ingest_url?: string
       }
-      const url = response?.whipUrl || response?.whip_url
-      if (!url) {
-        throw new Error("تعذر الحصول على رابط البث.")
+      const serverUrl = response?.rtmp_server_url
+      const streamKey = response?.stream_key
+      const fullIngestUrl = response?.full_ingest_url
+      if (!serverUrl || !streamKey || !fullIngestUrl) {
+        throw new Error("تعذر الحصول على بيانات OBS.")
       }
-      setWhipUrl(url)
+      setObsCredentials({
+        rtmp_server_url: serverUrl,
+        stream_key: streamKey,
+        full_ingest_url: fullIngestUrl,
+      })
       const refresh = (await apiFetch("/teacher/lessons")) as { data?: Lesson[] }
       setLessons(Array.isArray(refresh?.data) ? refresh.data : [])
     } catch (err) {
       setBroadcastError(err instanceof Error ? err.message : "تعذر بدء البث المباشر.")
-      setWhipUrl(null)
+      setObsCredentials(null)
     } finally {
       setStartingLessonId(null)
     }
   }
 
-  const handleCloseBroadcaster = () => {
+  const handleCloseObsCard = () => {
     setBroadcastLessonId(null)
-    setWhipUrl(null)
+    setObsCredentials(null)
+    setCopiedField(null)
     setBroadcastError(null)
+  }
+
+  const handleCopy = async (value: string, field: "server" | "key" | "full") => {
+    try {
+      await navigator.clipboard.writeText(value)
+      setCopiedField(field)
+      window.setTimeout(() => {
+        setCopiedField((current) => (current === field ? null : current))
+      }, 2000)
+    } catch {
+      setBroadcastError("تعذر النسخ. يرجى النسخ يدوياً.")
+    }
   }
 
   return (
@@ -364,22 +392,63 @@ export default function TeacherLessonsPage() {
                         {!lesson.has_media && (
                           <button
                             type="button"
-                            onClick={() => handleStartBrowserLive(lesson.id)}
+                            onClick={() => handleStartObsLive(lesson.id)}
                             className="inline-flex h-9 items-center justify-center rounded-xl bg-[var(--color-sidebar-bg)] px-4 text-sm font-medium text-white transition hover:opacity-90 disabled:opacity-60"
                             disabled={startingLessonId === lesson.id}
                           >
-                            {startingLessonId === lesson.id ? "جارٍ البدء..." : "بدء البث من المتصفح"}
+                            {startingLessonId === lesson.id ? "جارٍ التحضير..." : "بدء البث عبر OBS"}
                           </button>
                         )}
-                        {broadcastLessonId === lesson.id && whipUrl ? (
+                        {broadcastLessonId === lesson.id && obsCredentials ? (
                           <div className="rounded-xl border border-slate-200 bg-slate-50 p-3">
-                            <div className="mb-2 text-xs text-slate-500 break-all">
-                              WHIP: {whipUrl}
+                            <div className="mb-2 text-xs font-semibold text-slate-700">
+                              إعداد OBS:
                             </div>
-                            <div className="mb-3 text-xs text-slate-500">
-                              يتم بث الفيديو من المتصفح ثم يُعاد بثه إلى يوتيوب تلقائياً.
+                            <div className="grid gap-2 text-xs text-slate-600">
+                              <div className="rounded-lg border border-slate-200 bg-white p-2">
+                                <div className="mb-1 font-medium text-slate-700">Server</div>
+                                <div className="break-all">{obsCredentials.rtmp_server_url}</div>
+                                <button
+                                  type="button"
+                                  onClick={() => handleCopy(obsCredentials.rtmp_server_url, "server")}
+                                  className="mt-2 inline-flex h-7 items-center rounded-md border border-slate-200 px-2 text-xs text-slate-700 hover:bg-slate-50"
+                                >
+                                  {copiedField === "server" ? "تم النسخ" : "نسخ Server"}
+                                </button>
+                              </div>
+                              <div className="rounded-lg border border-slate-200 bg-white p-2">
+                                <div className="mb-1 font-medium text-slate-700">Stream Key</div>
+                                <div className="break-all">{obsCredentials.stream_key}</div>
+                                <button
+                                  type="button"
+                                  onClick={() => handleCopy(obsCredentials.stream_key, "key")}
+                                  className="mt-2 inline-flex h-7 items-center rounded-md border border-slate-200 px-2 text-xs text-slate-700 hover:bg-slate-50"
+                                >
+                                  {copiedField === "key" ? "تم النسخ" : "نسخ Stream Key"}
+                                </button>
+                              </div>
+                              <div className="rounded-lg border border-slate-200 bg-white p-2">
+                                <div className="mb-1 font-medium text-slate-700">Full Ingest URL</div>
+                                <div className="break-all">{obsCredentials.full_ingest_url}</div>
+                                <button
+                                  type="button"
+                                  onClick={() => handleCopy(obsCredentials.full_ingest_url, "full")}
+                                  className="mt-2 inline-flex h-7 items-center rounded-md border border-slate-200 px-2 text-xs text-slate-700 hover:bg-slate-50"
+                                >
+                                  {copiedField === "full" ? "تم النسخ" : "نسخ الرابط الكامل"}
+                                </button>
+                              </div>
                             </div>
-                            <Broadcaster whipUrl={whipUrl} onStop={handleCloseBroadcaster} />
+                            <div className="mt-3 text-xs text-slate-500">
+                              في OBS: Settings ثم Stream ثم Service = Custom، والصق Server و Stream Key ثم Start Streaming.
+                            </div>
+                            <button
+                              type="button"
+                              onClick={handleCloseObsCard}
+                              className="mt-3 inline-flex h-8 items-center rounded-md border border-slate-200 bg-white px-3 text-xs text-slate-700 hover:bg-slate-50"
+                            >
+                              إغلاق
+                            </button>
                           </div>
                         ) : null}
                       </div>
