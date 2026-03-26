@@ -26,7 +26,7 @@ export default function Broadcaster({ whipUrl, onStop }: BroadcasterProps) {
     const desiredParams: Record<string, string> = {
       minptime: "10",
       ptime: "20",
-      maxaveragebitrate: "48000",
+      maxaveragebitrate: "64000",
       useinbandfec: "1",
       usedtx: "0",
       stereo: "0",
@@ -80,16 +80,25 @@ export default function Broadcaster({ whipUrl, onStop }: BroadcasterProps) {
       setError(null)
       setPublishing(true)
 
+      const audioConstraints: MediaTrackConstraints & Record<string, unknown> = {
+        echoCancellation: { ideal: true },
+        noiseSuppression: { ideal: true },
+        autoGainControl: { ideal: true },
+        channelCount: { ideal: 1 },
+        sampleRate: { ideal: 48000 },
+        sampleSize: { ideal: 16 },
+      }
+
+      // Chromium-only legacy constraints. Non-chromium browsers simply ignore these keys.
+      if (typeof navigator !== "undefined" && /Chrome|Chromium|Edg\//.test(navigator.userAgent)) {
+        audioConstraints.googEchoCancellation = true
+        audioConstraints.googNoiseSuppression = true
+        audioConstraints.googAutoGainControl = true
+      }
+
       const stream = await navigator.mediaDevices.getUserMedia({
         video: true,
-        audio: {
-          echoCancellation: true,
-          noiseSuppression: true,
-          autoGainControl: false,
-          channelCount: { ideal: 1 },
-          sampleRate: { ideal: 48000 },
-          sampleSize: { ideal: 16 },
-        },
+        audio: audioConstraints,
       })
       if (videoRef.current) videoRef.current.srcObject = stream
 
@@ -99,6 +108,9 @@ export default function Broadcaster({ whipUrl, onStop }: BroadcasterProps) {
       stream.getTracks().forEach((track) => {
         if (track.kind === "audio") {
           track.contentHint = "speech"
+          if (process.env.NODE_ENV !== "production") {
+            console.info("[WHIP][audio settings]", track.getSettings())
+          }
         }
         pc.addTrack(track, stream)
       })
@@ -107,7 +119,7 @@ export default function Broadcaster({ whipUrl, onStop }: BroadcasterProps) {
       if (audioSender) {
         const params = audioSender.getParameters()
         params.encodings = params.encodings?.length ? params.encodings : [{}]
-        params.encodings[0].maxBitrate = 48000
+        params.encodings[0].maxBitrate = 64000
         await audioSender.setParameters(params)
       }
 
