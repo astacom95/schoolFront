@@ -101,11 +101,6 @@ const data = {
       icon: VideoIcon,
     },
     {
-      title: "موصل يوتيوب",
-      url: "/manager/youtube-connector",
-      icon: VideoIcon,
-    },
-    {
       title: "النتائج",
       url: "#",
       icon: RadioTowerIcon,

@@ -13,6 +13,7 @@ import {
   UsersIcon,
 } from "lucide-react"
 
+import FlvPlayer from "@/components/flv-player"
 import { apiFetch } from "@/lib/api/client"
 import { NavMain } from "@/components/nav-main"
 import {
@@ -37,7 +38,6 @@ type LessonMedia = {
   duration_seconds?: number | null
   source_url?: string | null
   cf_vod_playback_id?: string | null
-  yt_video_id?: string | null
 }
 
 type LessonDetails = {
@@ -51,6 +51,7 @@ type LessonDetails = {
   watch_url?: string | null
   embed_url?: string | null
   video_url?: string | null
+  playback_url?: string | null
   media?: LessonMedia | null
 }
 
@@ -128,7 +129,7 @@ export default function TeacherLessonDetailsPage() {
     void load()
   }, [lessonId])
 
-  const hasVideo = Boolean(lesson?.embed_url || lesson?.video_url)
+  const hasVideo = Boolean(lesson?.embed_url || lesson?.video_url || lesson?.playback_url)
   const isLive = lesson?.media?.status === "live"
 
   return (
@@ -197,6 +198,13 @@ export default function TeacherLessonDetailsPage() {
                             className="absolute inset-0 h-full w-full"
                             allow="autoplay; encrypted-media"
                             allowFullScreen
+                          />
+                        </div>
+                      ) : lesson.playback_url?.endsWith(".flv") ? (
+                        <div className="relative aspect-[4/3] w-full overflow-hidden bg-slate-100">
+                          <FlvPlayer
+                            url={lesson.playback_url}
+                            className="absolute inset-0 h-full w-full"
                           />
                         </div>
                       ) : (

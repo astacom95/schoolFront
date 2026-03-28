@@ -13,6 +13,8 @@ type Lesson = {
   created_at?: string | null
   watch_url?: string | null
   embed_url?: string | null
+  playback_url?: string | null
+  video_url?: string | null
   is_live?: boolean
 }
 
@@ -174,15 +176,10 @@ export default function StudentLessonsPage() {
                                 >
                                   فتح الدرس
                                 </Link>
-                                {lesson.watch_url ? (
-                                  <a
-                                    href={lesson.watch_url}
-                                    target="_blank"
-                                    rel="noreferrer"
-                                    className="inline-flex items-center justify-center rounded-lg border border-slate-200 bg-white px-4 py-2 text-xs font-semibold text-slate-600 transition hover:border-slate-300"
-                                  >
-                                    مشاهدة على يوتيوب
-                                  </a>
+                                {lesson.is_live ? (
+                                  <span className="inline-flex items-center justify-center rounded-lg border border-emerald-200 bg-emerald-50 px-4 py-2 text-xs font-semibold text-emerald-700">
+                                    البث متاح داخل صفحة الدرس
+                                  </span>
                                 ) : null}
                               </div>
                             </div>

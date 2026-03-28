@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react"
 import { useParams } from "next/navigation"
 
+import FlvPlayer from "@/components/flv-player"
 import { apiFetch } from "@/lib/api/client"
 
 type LessonDetails = {
@@ -13,7 +14,10 @@ type LessonDetails = {
   created_at?: string | null
   watch_url?: string | null
   embed_url?: string | null
+  video_url?: string | null
+  playback_url?: string | null
   is_live?: boolean
+  media_type?: string | null
   quiz_url?: string | null
   quiz_url_display?: string | null
 }
@@ -115,6 +119,21 @@ export default function StudentLessonDetailsPage() {
                     className="absolute inset-0 h-full w-full"
                     allow="autoplay; encrypted-media"
                     allowFullScreen
+                  />
+                </div>
+              ) : lesson.playback_url?.endsWith(".flv") ? (
+                <div className="relative aspect-[4/3] w-full overflow-hidden bg-slate-100">
+                  <FlvPlayer
+                    url={lesson.playback_url}
+                    className="absolute inset-0 h-full w-full"
+                  />
+                </div>
+              ) : lesson.video_url ? (
+                <div className="relative aspect-[4/3] w-full overflow-hidden bg-slate-100">
+                  <video
+                    className="absolute inset-0 h-full w-full"
+                    controls
+                    src={lesson.video_url}
                   />
                 </div>
               ) : (

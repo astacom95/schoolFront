@@ -12,6 +12,7 @@ import {
 } from "lucide-react"
 import Link from "next/link"
 
+import Broadcaster from "@/app/components/Broadcaster"
 import { apiFetch } from "@/lib/api/client"
 import { NavMain } from "@/components/nav-main"
 import { SectionCards } from "@/components/section-cards"
@@ -65,10 +66,19 @@ type TeacherInfo = {
   }[]
 }
 
-type ObsCredentials = {
-  rtmp_server_url: string
-  stream_key: string
-  full_ingest_url: string
+type LiveStartResponse = {
+  lesson_id: number
+  media_id: number
+  whip_url: string
+  stream_name: string
+  playback_flv_url: string
+}
+
+type ActiveLiveSession = {
+  lessonId: number
+  whipUrl: string
+  streamName: string
+  playbackFlvUrl: string
 }
 
 const teacherNav = [
@@ -125,10 +135,26 @@ export default function TeacherLessonsPage() {
   const [error, setError] = useState<string | null>(null)
   const [lessonError, setLessonError] = useState<string | null>(null)
   const [startingLessonId, setStartingLessonId] = useState<number | null>(null)
-  const [broadcastLessonId, setBroadcastLessonId] = useState<number | null>(null)
-  const [obsCredentials, setObsCredentials] = useState<ObsCredentials | null>(null)
-  const [copiedField, setCopiedField] = useState<"server" | "key" | "full" | null>(null)
-  const [broadcastError, setBroadcastError] = useState<string | null>(null)
+  const [endingLessonId, setEndingLessonId] = useState<number | null>(null)
+  const [activeLive, setActiveLive] = useState<ActiveLiveSession | null>(null)
+  const [liveError, setLiveError] = useState<string | null>(null)
+
+  const loadPageData = async () => {
+    const [subjectsResponse, lessonsResponse, allLessonsResponse] = (await Promise.all([
+      apiFetch("/teacher/subjects"),
+      apiFetch("/teacher/lessons?recorded=1"),
+      apiFetch("/teacher/lessons"),
+    ])) as [
+      { data?: Subject[] },
+      { data?: RecordedLesson[]; teacher?: TeacherInfo },
+      { data?: Lesson[] }
+    ]
+
+    setSubjects(Array.isArray(subjectsResponse?.data) ? subjectsResponse.data : [])
+    setRecordedLessons(Array.isArray(lessonsResponse?.data) ? lessonsResponse.data : [])
+    setTeacherInfo(lessonsResponse?.teacher ?? null)
+    setLessons(Array.isArray(allLessonsResponse?.data) ? allLessonsResponse.data : [])
+  }
 
   useEffect(() => {
     const load = async () => {
@@ -136,30 +162,20 @@ export default function TeacherLessonsPage() {
         setLoading(true)
         setError(null)
         setLessonError(null)
-        const [subjectsResponse, lessonsResponse, allLessonsResponse] = (await Promise.all([
-          apiFetch("/teacher/subjects"),
-          apiFetch("/teacher/lessons?recorded=1"),
-          apiFetch("/teacher/lessons"),
-        ])) as [
-          { data?: Subject[] },
-          { data?: RecordedLesson[]; teacher?: TeacherInfo },
-          { data?: Lesson[] }
-        ]
-        setSubjects(Array.isArray(subjectsResponse?.data) ? subjectsResponse.data : [])
-        setRecordedLessons(Array.isArray(lessonsResponse?.data) ? lessonsResponse.data : [])
-        setTeacherInfo(lessonsResponse?.teacher ?? null)
-        setLessons(Array.isArray(allLessonsResponse?.data) ? allLessonsResponse.data : [])
+        await loadPageData()
       } catch (err) {
-        setError(err instanceof Error ? err.message : "تعذر تحميل المواد.")
+        const message = err instanceof Error ? err.message : "تعذر تحميل البيانات."
+        setError(message)
+        setLessonError(message)
         setSubjects([])
         setRecordedLessons([])
         setTeacherInfo(null)
         setLessons([])
-        setLessonError(err instanceof Error ? err.message : "تعذر تحميل الدروس المسجلة.")
       } finally {
         setLoading(false)
       }
     }
+
     void load()
   }, [])
 
@@ -175,58 +191,46 @@ export default function TeacherLessonsPage() {
     }))
   }, [subjects])
 
-  const handleStartObsLive = async (lessonId: number) => {
+  const handleStartLive = async (lessonId: number) => {
     try {
       setStartingLessonId(lessonId)
-      setBroadcastError(null)
-      setBroadcastLessonId(lessonId)
-      setObsCredentials(null)
-      setCopiedField(null)
-      await apiFetch(`/teacher/lessons/${lessonId}/start-live-youtube`, {
+      setLiveError(null)
+      const response = (await apiFetch(`/teacher/lessons/${lessonId}/start-live`, {
         method: "POST",
-      })
-      const response = (await apiFetch(`/teacher/lessons/${lessonId}/obs`)) as {
-        rtmp_server_url?: string
-        stream_key?: string
-        full_ingest_url?: string
+      })) as LiveStartResponse
+
+      if (!response?.whip_url || !response?.stream_name || !response?.playback_flv_url) {
+        throw new Error("تعذر بدء البث المباشر.")
       }
-      const serverUrl = response?.rtmp_server_url
-      const streamKey = response?.stream_key
-      const fullIngestUrl = response?.full_ingest_url
-      if (!serverUrl || !streamKey || !fullIngestUrl) {
-        throw new Error("تعذر الحصول على بيانات OBS.")
-      }
-      setObsCredentials({
-        rtmp_server_url: serverUrl,
-        stream_key: streamKey,
-        full_ingest_url: fullIngestUrl,
+
+      setActiveLive({
+        lessonId,
+        whipUrl: response.whip_url,
+        streamName: response.stream_name,
+        playbackFlvUrl: response.playback_flv_url,
       })
-      const refresh = (await apiFetch("/teacher/lessons")) as { data?: Lesson[] }
-      setLessons(Array.isArray(refresh?.data) ? refresh.data : [])
+
+      await loadPageData()
     } catch (err) {
-      setBroadcastError(err instanceof Error ? err.message : "تعذر بدء البث المباشر.")
-      setObsCredentials(null)
+      setLiveError(err instanceof Error ? err.message : "تعذر بدء البث المباشر.")
     } finally {
       setStartingLessonId(null)
     }
   }
 
-  const handleCloseObsCard = () => {
-    setBroadcastLessonId(null)
-    setObsCredentials(null)
-    setCopiedField(null)
-    setBroadcastError(null)
-  }
-
-  const handleCopy = async (value: string, field: "server" | "key" | "full") => {
+  const handleEndLive = async (lessonId: number) => {
     try {
-      await navigator.clipboard.writeText(value)
-      setCopiedField(field)
-      window.setTimeout(() => {
-        setCopiedField((current) => (current === field ? null : current))
-      }, 2000)
-    } catch {
-      setBroadcastError("تعذر النسخ. يرجى النسخ يدوياً.")
+      setEndingLessonId(lessonId)
+      setLiveError(null)
+      await apiFetch(`/teacher/lessons/${lessonId}/end-live`, {
+        method: "POST",
+      })
+      setActiveLive((current) => (current?.lessonId === lessonId ? null : current))
+      await loadPageData()
+    } catch (err) {
+      setLiveError(err instanceof Error ? err.message : "تعذر إنهاء البث.")
+    } finally {
+      setEndingLessonId(null)
     }
   }
 
@@ -285,6 +289,7 @@ export default function TeacherLessonsPage() {
                   <div className="card">لا توجد مواد مرتبطة بهذا المعلم حالياً.</div>
                 </div>
               )}
+
               <div className="px-4 lg:px-6">
                 <div className="rounded-2xl border border-slate-100 bg-white p-5 shadow-sm">
                   <div className="flex flex-wrap items-start justify-between gap-4">
@@ -296,74 +301,75 @@ export default function TeacherLessonsPage() {
                     </div>
                     <h2 className="text-xl font-semibold text-slate-900">الدروس المسجلة</h2>
                   </div>
-                {lessonError ? (
-                  <div className="card text-red-500 mt-4">{lessonError}</div>
-                ) : recordedLessons.length > 0 ? (
-                  <div className="mt-4 flex gap-6 overflow-x-auto pb-2">
-                    {recordedLessons.map((lesson) => (
-                      <div
-                        key={lesson.id}
-                        className="relative h-[170px] w-[230px] shrink-0 overflow-hidden rounded-2xl border border-slate-200 bg-[var(--color-surface-alt)]"
-                      >
-                        {lesson.thumbnail_url ? (
+                  {lessonError ? (
+                    <div className="card text-red-500 mt-4">{lessonError}</div>
+                  ) : recordedLessons.length > 0 ? (
+                    <div className="mt-4 flex gap-6 overflow-x-auto pb-2">
+                      {recordedLessons.map((lesson) => (
+                        <div
+                          key={lesson.id}
+                          className="relative h-[170px] w-[230px] shrink-0 overflow-hidden rounded-2xl border border-slate-200 bg-[var(--color-surface-alt)]"
+                        >
+                          {lesson.thumbnail_url ? (
+                            // eslint-disable-next-line @next/next/no-img-element
+                            <img
+                              src={lesson.thumbnail_url}
+                              alt={lesson.title}
+                              className="h-full w-full object-cover"
+                            />
+                          ) : (
+                            <div className="flex h-full w-full items-center justify-center text-sm text-slate-500">
+                              بدون صورة
+                            </div>
+                          )}
+                        </div>
+                      ))}
+                    </div>
+                  ) : (
+                    <div className="mt-4 rounded-2xl border border-slate-100 bg-white p-6 text-center shadow-sm">
+                      <div className="mx-auto flex h-20 w-20 items-center justify-center overflow-hidden rounded-full bg-[var(--color-surface-alt)] text-lg font-semibold text-slate-600">
+                        {teacherInfo?.personal_image_url ? (
                           // eslint-disable-next-line @next/next/no-img-element
                           <img
-                            src={lesson.thumbnail_url}
-                            alt={lesson.title}
+                            src={
+                              teacherInfo.personal_image_url.startsWith("/storage")
+                                ? `${fileBaseUrl}${teacherInfo.personal_image_url}`
+                                : teacherInfo.personal_image_url
+                            }
+                            alt={teacherInfo?.name ?? "teacher"}
                             className="h-full w-full object-cover"
                           />
                         ) : (
-                          <div className="flex h-full w-full items-center justify-center text-sm text-slate-500">
-                            بدون صورة
-                          </div>
+                          (teacherInfo?.name ?? "—").toString().slice(0, 1)
                         )}
                       </div>
-                    ))}
-                  </div>
-                ) : (
-                  <div className="mt-4 rounded-2xl border border-slate-100 bg-white p-6 text-center shadow-sm">
-                    <div className="mx-auto flex h-20 w-20 items-center justify-center overflow-hidden rounded-full bg-[var(--color-surface-alt)] text-lg font-semibold text-slate-600">
-                      {teacherInfo?.personal_image_url ? (
-                        // eslint-disable-next-line @next/next/no-img-element
-                        <img
-                          src={
-                            teacherInfo.personal_image_url.startsWith("/storage")
-                              ? `${fileBaseUrl}${teacherInfo.personal_image_url}`
-                              : teacherInfo.personal_image_url
-                          }
-                          alt={teacherInfo?.name ?? "teacher"}
-                          className="h-full w-full object-cover"
-                        />
-                      ) : (
-                        (teacherInfo?.name ?? "—").toString().slice(0, 1)
-                      )}
-                    </div>
-                    <div className="mt-3 text-sm font-semibold text-slate-900">
-                      {teacherInfo?.name ?? "—"}
-                    </div>
-                    <div className="mt-1 text-xs text-slate-500">التخصصات</div>
-                    <div className="mt-4 flex flex-wrap justify-center gap-2">
-                      {(teacherInfo?.specializations ?? []).length === 0 ? (
-                        <span className="rounded-full border border-slate-200 px-3 py-1 text-xs text-slate-500">
-                          لا توجد تخصصات مسجلة
-                        </span>
-                      ) : (
-                        teacherInfo?.specializations?.map((spec) => (
-                          <span
-                            key={spec.id}
-                            className="rounded-full border border-slate-200 bg-white px-3 py-1 text-xs text-slate-700"
-                          >
-                            {spec.subject_name ?? "مادة"}{" "}
-                            {spec.level_name ? `- ${spec.level_name}` : ""}{" "}
-                            {spec.class_name ? `- ${spec.class_name}` : ""}
+                      <div className="mt-3 text-sm font-semibold text-slate-900">
+                        {teacherInfo?.name ?? "—"}
+                      </div>
+                      <div className="mt-1 text-xs text-slate-500">التخصصات</div>
+                      <div className="mt-4 flex flex-wrap justify-center gap-2">
+                        {(teacherInfo?.specializations ?? []).length === 0 ? (
+                          <span className="rounded-full border border-slate-200 px-3 py-1 text-xs text-slate-500">
+                            لا توجد تخصصات مسجلة
                           </span>
-                        ))
-                      )}
+                        ) : (
+                          teacherInfo?.specializations?.map((spec) => (
+                            <span
+                              key={spec.id}
+                              className="rounded-full border border-slate-200 bg-white px-3 py-1 text-xs text-slate-700"
+                            >
+                              {spec.subject_name ?? "مادة"}{" "}
+                              {spec.level_name ? `- ${spec.level_name}` : ""}{" "}
+                              {spec.class_name ? `- ${spec.class_name}` : ""}
+                            </span>
+                          ))
+                        )}
+                      </div>
                     </div>
-                  </div>
-                )}
+                  )}
                 </div>
               </div>
+
               <div className="px-4 lg:px-6">
                 <div className="flex items-center justify-between">
                   <h2 className="text-xl font-semibold text-slate-900">كل الدروس</h2>
@@ -373,86 +379,56 @@ export default function TeacherLessonsPage() {
                   <div className="card text-red-500 mt-4">{lessonError}</div>
                 ) : lessons.length > 0 ? (
                   <div className="mt-4 grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-                    {lessons.map((lesson) => (
-                      <div key={lesson.id} className="rounded-2xl border border-slate-100 bg-white p-4 shadow-sm flex flex-col gap-3">
-                        <div>
-                          <h3 className="text-base font-semibold">{lesson.title}</h3>
-                          <p className="text-sm text-slate-500">{lesson.subject_name ?? "—"}</p>
-                          <p className="text-xs text-slate-400">{lesson.created_at ?? "—"}</p>
-                        </div>
-                        <Link
-                          href={`/teacher/lessons/${lesson.id}`}
-                          className="inline-flex h-9 items-center justify-center rounded-xl border border-slate-200 px-4 text-sm font-medium text-[var(--color-text)] hover:bg-slate-50"
-                        >
-                          عرض تفاصيل الدرس
-                        </Link>
-                        {broadcastError && broadcastLessonId === lesson.id ? (
-                          <div className="text-sm text-red-600">{broadcastError}</div>
-                        ) : null}
-                        {!lesson.has_media && (
-                          <button
-                            type="button"
-                            onClick={() => handleStartObsLive(lesson.id)}
-                            className="inline-flex h-9 items-center justify-center rounded-xl bg-[var(--color-sidebar-bg)] px-4 text-sm font-medium text-white transition hover:opacity-90 disabled:opacity-60"
-                            disabled={startingLessonId === lesson.id}
+                    {lessons.map((lesson) => {
+                      const liveForCard = activeLive?.lessonId === lesson.id
+                      return (
+                        <div key={lesson.id} className="rounded-2xl border border-slate-100 bg-white p-4 shadow-sm flex flex-col gap-3">
+                          <div>
+                            <h3 className="text-base font-semibold">{lesson.title}</h3>
+                            <p className="text-sm text-slate-500">{lesson.subject_name ?? "—"}</p>
+                            <p className="text-xs text-slate-400">{lesson.created_at ?? "—"}</p>
+                          </div>
+
+                          <Link
+                            href={`/teacher/lessons/${lesson.id}`}
+                            className="inline-flex h-9 items-center justify-center rounded-xl border border-slate-200 px-4 text-sm font-medium text-[var(--color-text)] hover:bg-slate-50"
                           >
-                            {startingLessonId === lesson.id ? "جارٍ التحضير..." : "بدء البث عبر OBS"}
-                          </button>
-                        )}
-                        {broadcastLessonId === lesson.id && obsCredentials ? (
-                          <div className="rounded-xl border border-slate-200 bg-slate-50 p-3">
-                            <div className="mb-2 text-xs font-semibold text-slate-700">
-                              إعداد OBS:
-                            </div>
-                            <div className="grid gap-2 text-xs text-slate-600">
-                              <div className="rounded-lg border border-slate-200 bg-white p-2">
-                                <div className="mb-1 font-medium text-slate-700">Server</div>
-                                <div className="break-all">{obsCredentials.rtmp_server_url}</div>
-                                <button
-                                  type="button"
-                                  onClick={() => handleCopy(obsCredentials.rtmp_server_url, "server")}
-                                  className="mt-2 inline-flex h-7 items-center rounded-md border border-slate-200 px-2 text-xs text-slate-700 hover:bg-slate-50"
-                                >
-                                  {copiedField === "server" ? "تم النسخ" : "نسخ Server"}
-                                </button>
-                              </div>
-                              <div className="rounded-lg border border-slate-200 bg-white p-2">
-                                <div className="mb-1 font-medium text-slate-700">Stream Key</div>
-                                <div className="break-all">{obsCredentials.stream_key}</div>
-                                <button
-                                  type="button"
-                                  onClick={() => handleCopy(obsCredentials.stream_key, "key")}
-                                  className="mt-2 inline-flex h-7 items-center rounded-md border border-slate-200 px-2 text-xs text-slate-700 hover:bg-slate-50"
-                                >
-                                  {copiedField === "key" ? "تم النسخ" : "نسخ Stream Key"}
-                                </button>
-                              </div>
-                              <div className="rounded-lg border border-slate-200 bg-white p-2">
-                                <div className="mb-1 font-medium text-slate-700">Full Ingest URL</div>
-                                <div className="break-all">{obsCredentials.full_ingest_url}</div>
-                                <button
-                                  type="button"
-                                  onClick={() => handleCopy(obsCredentials.full_ingest_url, "full")}
-                                  className="mt-2 inline-flex h-7 items-center rounded-md border border-slate-200 px-2 text-xs text-slate-700 hover:bg-slate-50"
-                                >
-                                  {copiedField === "full" ? "تم النسخ" : "نسخ الرابط الكامل"}
-                                </button>
-                              </div>
-                            </div>
-                            <div className="mt-3 text-xs text-slate-500">
-                              في OBS: Settings ثم Stream ثم Service = Custom، والصق Server و Stream Key ثم Start Streaming.
-                            </div>
+                            عرض تفاصيل الدرس
+                          </Link>
+
+                          {liveError && liveForCard ? <div className="text-sm text-red-600">{liveError}</div> : null}
+
+                          {!lesson.has_media && !liveForCard ? (
                             <button
                               type="button"
-                              onClick={handleCloseObsCard}
-                              className="mt-3 inline-flex h-8 items-center rounded-md border border-slate-200 bg-white px-3 text-xs text-slate-700 hover:bg-slate-50"
+                              onClick={() => handleStartLive(lesson.id)}
+                              className="inline-flex h-9 items-center justify-center rounded-xl bg-[var(--color-sidebar-bg)] px-4 text-sm font-medium text-white transition hover:opacity-90 disabled:opacity-60"
+                              disabled={startingLessonId === lesson.id}
                             >
-                              إغلاق
+                              {startingLessonId === lesson.id ? "جارٍ التحضير..." : "بدء البث من المتصفح"}
                             </button>
-                          </div>
-                        ) : null}
-                      </div>
-                    ))}
+                          ) : null}
+
+                          {liveForCard && activeLive ? (
+                            <div className="rounded-xl border border-slate-200 bg-slate-50 p-3">
+                              <div className="mb-2 text-xs font-semibold text-slate-700">البث المباشر</div>
+                              <div className="mb-3 rounded-md border border-slate-200 bg-white p-2 text-xs text-slate-600">
+                                رابط المشاهدة: {activeLive.playbackFlvUrl}
+                              </div>
+                              <Broadcaster whipUrl={activeLive.whipUrl} />
+                              <button
+                                type="button"
+                                onClick={() => handleEndLive(lesson.id)}
+                                className="mt-3 inline-flex h-9 items-center justify-center rounded-xl bg-red-600 px-4 text-sm font-medium text-white transition hover:opacity-90 disabled:opacity-60"
+                                disabled={endingLessonId === lesson.id}
+                              >
+                                {endingLessonId === lesson.id ? "جارٍ إنهاء البث..." : "إنهاء البث وحفظ التسجيل"}
+                              </button>
+                            </div>
+                          ) : null}
+                        </div>
+                      )
+                    })}
                   </div>
                 ) : (
                   <div className="card mt-4">لا توجد دروس حتى الآن.</div>
