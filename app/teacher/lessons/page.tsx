@@ -222,6 +222,7 @@ export default function TeacherLessonsPage() {
     try {
       setEndingLessonId(lessonId)
       setLiveError(null)
+      await new Promise((resolve) => setTimeout(resolve, 2500))
       await apiFetch(`/teacher/lessons/${lessonId}/end-live`, {
         method: "POST",
       })
@@ -415,7 +416,10 @@ export default function TeacherLessonsPage() {
                               <div className="mb-3 rounded-md border border-slate-200 bg-white p-2 text-xs text-slate-600">
                                 رابط المشاهدة: {activeLive.playbackFlvUrl}
                               </div>
-                              <Broadcaster whipUrl={activeLive.whipUrl} />
+                              <Broadcaster
+                                whipUrl={activeLive.whipUrl}
+                                forceStop={endingLessonId === lesson.id}
+                              />
                               <button
                                 type="button"
                                 onClick={() => handleEndLive(lesson.id)}

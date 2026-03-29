@@ -4,10 +4,11 @@ import { useEffect, useRef, useState } from "react"
 
 type BroadcasterProps = {
   whipUrl: string
+  forceStop?: boolean
   onStop?: () => void
 }
 
-export default function Broadcaster({ whipUrl, onStop }: BroadcasterProps) {
+export default function Broadcaster({ whipUrl, forceStop = false, onStop }: BroadcasterProps) {
   const videoRef = useRef<HTMLVideoElement>(null)
   const pcRef = useRef<RTCPeerConnection | null>(null)
   const attemptedAutoStartRef = useRef<string | null>(null)
@@ -165,6 +166,12 @@ export default function Broadcaster({ whipUrl, onStop }: BroadcasterProps) {
     void start()
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [whipUrl])
+
+  useEffect(() => {
+    if (!forceStop || !publishing) return
+    void stop()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [forceStop, publishing])
 
   useEffect(() => {
     return () => {
