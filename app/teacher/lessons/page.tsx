@@ -13,7 +13,7 @@ import {
 import Link from "next/link"
 
 import Broadcaster from "@/app/components/Broadcaster"
-import { apiFetch } from "@/lib/api/client"
+import { ApiError, apiFetch } from "@/lib/api/client"
 import { NavMain } from "@/components/nav-main"
 import { SectionCards } from "@/components/section-cards"
 import {
@@ -136,8 +136,10 @@ export default function TeacherLessonsPage() {
   const [lessonError, setLessonError] = useState<string | null>(null)
   const [startingLessonId, setStartingLessonId] = useState<number | null>(null)
   const [endingLessonId, setEndingLessonId] = useState<number | null>(null)
+  const [retryUploadingLessonId, setRetryUploadingLessonId] = useState<number | null>(null)
   const [activeLive, setActiveLive] = useState<ActiveLiveSession | null>(null)
   const [liveError, setLiveError] = useState<string | null>(null)
+  const [canRetryUpload, setCanRetryUpload] = useState(false)
 
   const loadPageData = async () => {
     const [subjectsResponse, lessonsResponse, allLessonsResponse] = (await Promise.all([
@@ -195,6 +197,7 @@ export default function TeacherLessonsPage() {
     try {
       setStartingLessonId(lessonId)
       setLiveError(null)
+      setCanRetryUpload(false)
       const response = (await apiFetch(`/teacher/lessons/${lessonId}/start-live`, {
         method: "POST",
       })) as LiveStartResponse
@@ -222,16 +225,41 @@ export default function TeacherLessonsPage() {
     try {
       setEndingLessonId(lessonId)
       setLiveError(null)
+      setCanRetryUpload(false)
       await new Promise((resolve) => setTimeout(resolve, 2500))
       await apiFetch(`/teacher/lessons/${lessonId}/end-live`, {
         method: "POST",
       })
       setActiveLive((current) => (current?.lessonId === lessonId ? null : current))
+      setCanRetryUpload(false)
       await loadPageData()
     } catch (err) {
-      setLiveError(err instanceof Error ? err.message : "تعذر إنهاء البث.")
+      if (err instanceof ApiError && err.code === "recording_not_found") {
+        setCanRetryUpload(true)
+        setLiveError("Recording is not finalized yet. Try Upload Again.")
+      } else {
+        setCanRetryUpload(false)
+        setLiveError(err instanceof Error ? err.message : "تعذر إنهاء البث.")
+      }
     } finally {
       setEndingLessonId(null)
+    }
+  }
+
+  const handleRetryUpload = async (lessonId: number) => {
+    try {
+      setRetryUploadingLessonId(lessonId)
+      setLiveError(null)
+      await apiFetch(`/teacher/lessons/${lessonId}/retry-upload-recording`, {
+        method: "POST",
+      })
+      setCanRetryUpload(false)
+      setActiveLive((current) => (current?.lessonId === lessonId ? null : current))
+      await loadPageData()
+    } catch (err) {
+      setLiveError(err instanceof Error ? err.message : "تعذر إعادة رفع التسجيل.")
+    } finally {
+      setRetryUploadingLessonId(null)
     }
   }
 
@@ -416,6 +444,9 @@ export default function TeacherLessonsPage() {
                               <div className="mb-3 rounded-md border border-slate-200 bg-white p-2 text-xs text-slate-600">
                                 رابط المشاهدة: {activeLive.playbackFlvUrl}
                               </div>
+                              <div className="mb-3 rounded-md border border-slate-200 bg-white p-2 text-xs text-slate-600">
+                                Stream: {activeLive.streamName}
+                              </div>
                               <Broadcaster
                                 whipUrl={activeLive.whipUrl}
                                 forceStop={endingLessonId === lesson.id}
@@ -428,6 +459,16 @@ export default function TeacherLessonsPage() {
                               >
                                 {endingLessonId === lesson.id ? "جارٍ إنهاء البث..." : "إنهاء البث وحفظ التسجيل"}
                               </button>
+                              {canRetryUpload ? (
+                                <button
+                                  type="button"
+                                  onClick={() => handleRetryUpload(lesson.id)}
+                                  className="mt-2 inline-flex h-9 items-center justify-center rounded-xl border border-slate-200 bg-white px-4 text-sm font-medium text-slate-700 transition hover:bg-slate-50 disabled:opacity-60"
+                                  disabled={retryUploadingLessonId === lesson.id}
+                                >
+                                  {retryUploadingLessonId === lesson.id ? "جارٍ إعادة الرفع..." : "Try Upload Again"}
+                                </button>
+                              ) : null}
                             </div>
                           ) : null}
                         </div>
