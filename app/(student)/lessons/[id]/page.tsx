@@ -32,6 +32,7 @@ export default function StudentLessonDetailsPage() {
   const [error, setError] = useState<string | null>(null)
   const [attendanceCount, setAttendanceCount] = useState<number | null>(null)
   const [attendanceStatus, setAttendanceStatus] = useState<string | null>(null)
+  const [playbackError, setPlaybackError] = useState<string | null>(null)
 
   useEffect(() => {
     const loadLesson = async () => {
@@ -92,6 +93,10 @@ export default function StudentLessonDetailsPage() {
       })()
     : null
   const hasQuiz = !!quizHref
+  const playbackUrl = lesson?.playback_url ?? lesson?.video_url ?? lesson?.watch_url ?? null
+  const useFlvPlayer = Boolean(
+    playbackUrl && (lesson?.is_live || lesson?.media_type === "live" || playbackUrl.toLowerCase().endsWith(".flv")),
+  )
 
   return (
     <div className="flex flex-1 flex-col bg-[#F5F7FA] px-4 py-6 text-slate-900 lg:px-10" dir="rtl">
@@ -121,19 +126,20 @@ export default function StudentLessonDetailsPage() {
                     allowFullScreen
                   />
                 </div>
-              ) : lesson.playback_url?.endsWith(".flv") ? (
+              ) : useFlvPlayer && playbackUrl ? (
                 <div className="relative aspect-[4/3] w-full overflow-hidden bg-slate-100">
                   <FlvPlayer
-                    url={lesson.playback_url}
+                    url={playbackUrl}
                     className="absolute inset-0 h-full w-full"
                   />
                 </div>
-              ) : lesson.video_url ? (
+              ) : playbackUrl ? (
                 <div className="relative aspect-[4/3] w-full overflow-hidden bg-slate-100">
                   <video
                     className="absolute inset-0 h-full w-full"
                     controls
-                    src={lesson.video_url}
+                    src={playbackUrl}
+                    onError={() => setPlaybackError("تعذر تشغيل الفيديو المسجل. تحقق من رابط التخزين أو صلاحيات الوصول.")}
                   />
                 </div>
               ) : (
@@ -141,6 +147,11 @@ export default function StudentLessonDetailsPage() {
                   لا يتوفر فيديو لهذا الدرس بعد.
                 </div>
               )}
+              {playbackError ? (
+                <div className="border-t border-slate-200 bg-red-50 px-4 py-2 text-xs text-red-700">
+                  {playbackError}
+                </div>
+              ) : null}
               {lesson.is_live ? (
                 <div className="absolute left-8 top-1/2 -translate-y-1/2">
                   <div className="flex items-center gap-3 rounded-2xl bg-red-600 px-6 py-4 text-white shadow-lg">
