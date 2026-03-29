@@ -405,7 +405,7 @@ export default function TeacherLessonsPage() {
                               className="inline-flex h-9 items-center justify-center rounded-xl bg-[var(--color-sidebar-bg)] px-4 text-sm font-medium text-white transition hover:opacity-90 disabled:opacity-60"
                               disabled={startingLessonId === lesson.id}
                             >
-                              {startingLessonId === lesson.id ? "جارٍ التحضير..." : "بدء البث من المتصفح"}
+                              {startingLessonId === lesson.id ? "جارٍ التحضير..." : "تهيئة غرفة البث"}
                             </button>
                           ) : null}
 

@@ -10,6 +10,7 @@ type BroadcasterProps = {
 export default function Broadcaster({ whipUrl, onStop }: BroadcasterProps) {
   const videoRef = useRef<HTMLVideoElement>(null)
   const pcRef = useRef<RTCPeerConnection | null>(null)
+  const attemptedAutoStartRef = useRef<string | null>(null)
   const [publishing, setPublishing] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
@@ -155,6 +156,15 @@ export default function Broadcaster({ whipUrl, onStop }: BroadcasterProps) {
     cleanup()
     onStop?.()
   }
+
+  useEffect(() => {
+    if (!whipUrl) return
+    if (attemptedAutoStartRef.current === whipUrl) return
+
+    attemptedAutoStartRef.current = whipUrl
+    void start()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [whipUrl])
 
   useEffect(() => {
     return () => {
