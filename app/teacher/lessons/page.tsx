@@ -12,8 +12,7 @@ import {
 } from "lucide-react"
 import Link from "next/link"
 
-import Broadcaster from "@/app/components/Broadcaster"
-import { ApiError, apiFetch } from "@/lib/api/client"
+import { apiFetch } from "@/lib/api/client"
 import { NavMain } from "@/components/nav-main"
 import { SectionCards } from "@/components/section-cards"
 import {
@@ -41,8 +40,8 @@ type RecordedLesson = {
   id: number
   title: string
   subject_name?: string | null
-  thumbnail_url?: string | null
   created_at?: string | null
+  meet_link?: string | null
 }
 
 type Lesson = {
@@ -51,6 +50,7 @@ type Lesson = {
   subject_name?: string | null
   created_at?: string | null
   has_media?: boolean
+  meet_link?: string | null
 }
 
 type TeacherInfo = {
@@ -68,17 +68,9 @@ type TeacherInfo = {
 
 type LiveStartResponse = {
   lesson_id: number
-  media_id: number
-  whip_url: string
-  stream_name: string
-  playback_flv_url: string
-}
-
-type ActiveLiveSession = {
-  lessonId: number
-  whipUrl: string
-  streamName: string
-  playbackFlvUrl: string
+  meet_link: string
+  has_media: boolean
+  is_recorded: boolean
 }
 
 const teacherNav = [
@@ -135,11 +127,8 @@ export default function TeacherLessonsPage() {
   const [error, setError] = useState<string | null>(null)
   const [lessonError, setLessonError] = useState<string | null>(null)
   const [startingLessonId, setStartingLessonId] = useState<number | null>(null)
-  const [endingLessonId, setEndingLessonId] = useState<number | null>(null)
-  const [retryUploadingLessonId, setRetryUploadingLessonId] = useState<number | null>(null)
-  const [activeLive, setActiveLive] = useState<ActiveLiveSession | null>(null)
-  const [liveError, setLiveError] = useState<string | null>(null)
-  const [canRetryUpload, setCanRetryUpload] = useState(false)
+  const [liveErrorByLesson, setLiveErrorByLesson] = useState<Record<number, string>>({})
+  const [meetLinkByLesson, setMeetLinkByLesson] = useState<Record<number, string>>({})
 
   const loadPageData = async () => {
     const [subjectsResponse, lessonsResponse, allLessonsResponse] = (await Promise.all([
@@ -152,10 +141,20 @@ export default function TeacherLessonsPage() {
       { data?: Lesson[] }
     ]
 
+    const all = Array.isArray(allLessonsResponse?.data) ? allLessonsResponse.data : []
     setSubjects(Array.isArray(subjectsResponse?.data) ? subjectsResponse.data : [])
     setRecordedLessons(Array.isArray(lessonsResponse?.data) ? lessonsResponse.data : [])
     setTeacherInfo(lessonsResponse?.teacher ?? null)
-    setLessons(Array.isArray(allLessonsResponse?.data) ? allLessonsResponse.data : [])
+    setLessons(all)
+    setMeetLinkByLesson((current) => {
+      const next = { ...current }
+      all.forEach((lesson) => {
+        if (!next[lesson.id] && lesson.meet_link) {
+          next[lesson.id] = lesson.meet_link
+        }
+      })
+      return next
+    })
   }
 
   useEffect(() => {
@@ -196,70 +195,39 @@ export default function TeacherLessonsPage() {
   const handleStartLive = async (lessonId: number) => {
     try {
       setStartingLessonId(lessonId)
-      setLiveError(null)
-      setCanRetryUpload(false)
+      setLiveErrorByLesson((current) => ({ ...current, [lessonId]: "" }))
+
+      const meetLink = (meetLinkByLesson[lessonId] ?? "").trim()
+      if (!meetLink) {
+        setLiveErrorByLesson((current) => ({
+          ...current,
+          [lessonId]: "ضع رابط Google Meet أولاً.",
+        }))
+        return
+      }
+
       const response = (await apiFetch(`/teacher/lessons/${lessonId}/start-live`, {
         method: "POST",
+        body: JSON.stringify({ meet_link: meetLink }),
       })) as LiveStartResponse
 
-      if (!response?.whip_url || !response?.stream_name || !response?.playback_flv_url) {
-        throw new Error("تعذر بدء البث المباشر.")
+      if (!response?.meet_link) {
+        throw new Error("تعذر حفظ رابط الاجتماع.")
       }
 
-      setActiveLive({
-        lessonId,
-        whipUrl: response.whip_url,
-        streamName: response.stream_name,
-        playbackFlvUrl: response.playback_flv_url,
-      })
+      setMeetLinkByLesson((current) => ({
+        ...current,
+        [lessonId]: response.meet_link,
+      }))
 
       await loadPageData()
     } catch (err) {
-      setLiveError(err instanceof Error ? err.message : "تعذر بدء البث المباشر.")
+      setLiveErrorByLesson((current) => ({
+        ...current,
+        [lessonId]: err instanceof Error ? err.message : "تعذر بدء الجلسة.",
+      }))
     } finally {
       setStartingLessonId(null)
-    }
-  }
-
-  const handleEndLive = async (lessonId: number) => {
-    try {
-      setEndingLessonId(lessonId)
-      setLiveError(null)
-      setCanRetryUpload(false)
-      await new Promise((resolve) => setTimeout(resolve, 2500))
-      await apiFetch(`/teacher/lessons/${lessonId}/end-live`, {
-        method: "POST",
-      })
-      setActiveLive((current) => (current?.lessonId === lessonId ? null : current))
-      setCanRetryUpload(false)
-      await loadPageData()
-    } catch (err) {
-      if (err instanceof ApiError && err.code === "recording_not_found") {
-        setCanRetryUpload(true)
-        setLiveError("Recording is not finalized yet. Try Upload Again.")
-      } else {
-        setCanRetryUpload(false)
-        setLiveError(err instanceof Error ? err.message : "تعذر إنهاء البث.")
-      }
-    } finally {
-      setEndingLessonId(null)
-    }
-  }
-
-  const handleRetryUpload = async (lessonId: number) => {
-    try {
-      setRetryUploadingLessonId(lessonId)
-      setLiveError(null)
-      await apiFetch(`/teacher/lessons/${lessonId}/retry-upload-recording`, {
-        method: "POST",
-      })
-      setCanRetryUpload(false)
-      setActiveLive((current) => (current?.lessonId === lessonId ? null : current))
-      await loadPageData()
-    } catch (err) {
-      setLiveError(err instanceof Error ? err.message : "تعذر إعادة رفع التسجيل.")
-    } finally {
-      setRetryUploadingLessonId(null)
     }
   }
 
@@ -333,24 +301,22 @@ export default function TeacherLessonsPage() {
                   {lessonError ? (
                     <div className="card text-red-500 mt-4">{lessonError}</div>
                   ) : recordedLessons.length > 0 ? (
-                    <div className="mt-4 flex gap-6 overflow-x-auto pb-2">
+                    <div className="mt-4 grid gap-3 md:grid-cols-2">
                       {recordedLessons.map((lesson) => (
                         <div
                           key={lesson.id}
-                          className="relative h-[170px] w-[230px] shrink-0 overflow-hidden rounded-2xl border border-slate-200 bg-[var(--color-surface-alt)]"
+                          className="rounded-xl border border-slate-200 bg-[var(--color-surface-alt)] p-4"
                         >
-                          {lesson.thumbnail_url ? (
-                            // eslint-disable-next-line @next/next/no-img-element
-                            <img
-                              src={lesson.thumbnail_url}
-                              alt={lesson.title}
-                              className="h-full w-full object-cover"
-                            />
-                          ) : (
-                            <div className="flex h-full w-full items-center justify-center text-sm text-slate-500">
-                              بدون صورة
-                            </div>
-                          )}
+                          <div className="text-sm font-semibold text-slate-900">{lesson.title}</div>
+                          <div className="mt-1 text-xs text-slate-500">{lesson.subject_name ?? "—"}</div>
+                          <a
+                            href={lesson.meet_link ?? "#"}
+                            target="_blank"
+                            rel="noreferrer"
+                            className="mt-3 inline-flex text-xs font-semibold text-[var(--color-sidebar-bg)]"
+                          >
+                            فتح رابط الاجتماع
+                          </a>
                         </div>
                       ))}
                     </div>
@@ -375,25 +341,6 @@ export default function TeacherLessonsPage() {
                       <div className="mt-3 text-sm font-semibold text-slate-900">
                         {teacherInfo?.name ?? "—"}
                       </div>
-                      <div className="mt-1 text-xs text-slate-500">التخصصات</div>
-                      <div className="mt-4 flex flex-wrap justify-center gap-2">
-                        {(teacherInfo?.specializations ?? []).length === 0 ? (
-                          <span className="rounded-full border border-slate-200 px-3 py-1 text-xs text-slate-500">
-                            لا توجد تخصصات مسجلة
-                          </span>
-                        ) : (
-                          teacherInfo?.specializations?.map((spec) => (
-                            <span
-                              key={spec.id}
-                              className="rounded-full border border-slate-200 bg-white px-3 py-1 text-xs text-slate-700"
-                            >
-                              {spec.subject_name ?? "مادة"}{" "}
-                              {spec.level_name ? `- ${spec.level_name}` : ""}{" "}
-                              {spec.class_name ? `- ${spec.class_name}` : ""}
-                            </span>
-                          ))
-                        )}
-                      </div>
                     </div>
                   )}
                 </div>
@@ -402,14 +349,15 @@ export default function TeacherLessonsPage() {
               <div className="px-4 lg:px-6">
                 <div className="flex items-center justify-between">
                   <h2 className="text-xl font-semibold text-slate-900">كل الدروس</h2>
-                  <span className="text-xs text-slate-500">عرض جميع الدروس المتاحة.</span>
+                  <span className="text-xs text-slate-500">GO ثم الصق رابط Meet ثم Start Now.</span>
                 </div>
                 {lessonError ? (
                   <div className="card text-red-500 mt-4">{lessonError}</div>
                 ) : lessons.length > 0 ? (
                   <div className="mt-4 grid gap-4 md:grid-cols-2 lg:grid-cols-3">
                     {lessons.map((lesson) => {
-                      const liveForCard = activeLive?.lessonId === lesson.id
+                      const inputValue = meetLinkByLesson[lesson.id] ?? ""
+                      const lessonErrorText = liveErrorByLesson[lesson.id]
                       return (
                         <div key={lesson.id} className="rounded-2xl border border-slate-100 bg-white p-4 shadow-sm flex flex-col gap-3">
                           <div>
@@ -425,51 +373,50 @@ export default function TeacherLessonsPage() {
                             عرض تفاصيل الدرس
                           </Link>
 
-                          {liveError && liveForCard ? <div className="text-sm text-red-600">{liveError}</div> : null}
+                          <a
+                            href="https://mail.google.com/mail/u/0/#calls"
+                            target="_blank"
+                            rel="noreferrer"
+                            className="inline-flex h-9 items-center justify-center rounded-xl bg-[var(--color-sidebar-bg)] px-4 text-sm font-medium text-white transition hover:opacity-90"
+                          >
+                            GO
+                          </a>
 
-                          {!lesson.has_media && !liveForCard ? (
-                            <button
-                              type="button"
-                              onClick={() => handleStartLive(lesson.id)}
-                              className="inline-flex h-9 items-center justify-center rounded-xl bg-[var(--color-sidebar-bg)] px-4 text-sm font-medium text-white transition hover:opacity-90 disabled:opacity-60"
-                              disabled={startingLessonId === lesson.id}
-                            >
-                              {startingLessonId === lesson.id ? "جارٍ التحضير..." : "تهيئة غرفة البث"}
-                            </button>
+                          <input
+                            type="url"
+                            value={inputValue}
+                            placeholder="https://meet.google.com/ayc-obyo-ojq"
+                            onChange={(event) =>
+                              setMeetLinkByLesson((current) => ({
+                                ...current,
+                                [lesson.id]: event.target.value,
+                              }))
+                            }
+                            className="h-10 rounded-xl border border-slate-200 px-3 text-sm"
+                          />
+
+                          <button
+                            type="button"
+                            onClick={() => handleStartLive(lesson.id)}
+                            className="inline-flex h-9 items-center justify-center rounded-xl border border-slate-200 bg-white px-4 text-sm font-medium text-slate-700 transition hover:bg-slate-50 disabled:opacity-60"
+                            disabled={startingLessonId === lesson.id}
+                          >
+                            {startingLessonId === lesson.id ? "جارٍ الحفظ..." : "Start Now"}
+                          </button>
+
+                          {lessonErrorText ? (
+                            <div className="text-sm text-red-600">{lessonErrorText}</div>
                           ) : null}
 
-                          {liveForCard && activeLive ? (
-                            <div className="rounded-xl border border-slate-200 bg-slate-50 p-3">
-                              <div className="mb-2 text-xs font-semibold text-slate-700">البث المباشر</div>
-                              <div className="mb-3 rounded-md border border-slate-200 bg-white p-2 text-xs text-slate-600">
-                                رابط المشاهدة: {activeLive.playbackFlvUrl}
-                              </div>
-                              <div className="mb-3 rounded-md border border-slate-200 bg-white p-2 text-xs text-slate-600">
-                                Stream: {activeLive.streamName}
-                              </div>
-                              <Broadcaster
-                                whipUrl={activeLive.whipUrl}
-                                forceStop={endingLessonId === lesson.id}
-                              />
-                              <button
-                                type="button"
-                                onClick={() => handleEndLive(lesson.id)}
-                                className="mt-3 inline-flex h-9 items-center justify-center rounded-xl bg-red-600 px-4 text-sm font-medium text-white transition hover:opacity-90 disabled:opacity-60"
-                                disabled={endingLessonId === lesson.id}
-                              >
-                                {endingLessonId === lesson.id ? "جارٍ إنهاء البث..." : "إنهاء البث وحفظ التسجيل"}
-                              </button>
-                              {canRetryUpload ? (
-                                <button
-                                  type="button"
-                                  onClick={() => handleRetryUpload(lesson.id)}
-                                  className="mt-2 inline-flex h-9 items-center justify-center rounded-xl border border-slate-200 bg-white px-4 text-sm font-medium text-slate-700 transition hover:bg-slate-50 disabled:opacity-60"
-                                  disabled={retryUploadingLessonId === lesson.id}
-                                >
-                                  {retryUploadingLessonId === lesson.id ? "جارٍ إعادة الرفع..." : "Try Upload Again"}
-                                </button>
-                              ) : null}
-                            </div>
+                          {lesson.has_media && lesson.meet_link ? (
+                            <a
+                              href={lesson.meet_link}
+                              target="_blank"
+                              rel="noreferrer"
+                              className="text-xs font-semibold bg-green-100  rounded-lg  text-center p-3 text-emerald-700"
+                            >
+                              الرابط محفوظ - فتح الاجتماع
+                            </a>
                           ) : null}
                         </div>
                       )

@@ -11,11 +11,8 @@ type Lesson = {
   summary?: string | null
   subject_name?: string | null
   created_at?: string | null
-  watch_url?: string | null
-  embed_url?: string | null
-  playback_url?: string | null
-  video_url?: string | null
-  is_live?: boolean
+  meet_link?: string | null
+  has_media?: boolean
 }
 
 export default function StudentLessonsPage() {
@@ -140,9 +137,9 @@ export default function StudentLessonsPage() {
                               >
                                 {lesson.title}
                               </Link>
-                              {lesson.is_live ? (
+                              {lesson.has_media ? (
                                 <span className="rounded-full bg-red-100 px-2 py-0.5 text-xs font-semibold text-red-700">
-                                  بث مباشر
+                                  Meet جاهز
                                 </span>
                               ) : null}
                             </div>
@@ -176,9 +173,9 @@ export default function StudentLessonsPage() {
                                 >
                                   فتح الدرس
                                 </Link>
-                                {lesson.is_live ? (
+                                {lesson.has_media ? (
                                   <span className="inline-flex items-center justify-center rounded-lg border border-emerald-200 bg-emerald-50 px-4 py-2 text-xs font-semibold text-emerald-700">
-                                    البث متاح داخل صفحة الدرس
+                                    رابط Meet متاح داخل صفحة الدرس
                                   </span>
                                 ) : null}
                               </div>
