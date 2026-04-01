@@ -15,6 +15,7 @@ import { Door } from "@/components/door/door"
 import { SectionCards } from "@/components/section-cards"
 import { apiFetch } from "@/lib/api/client"
 import { ChartContainer, type ChartConfig } from "@/components/ui/chart"
+import { useIsMobile } from "@/components/ui/use-mobile"
 
 const baseStudentCards = [
   {
@@ -118,6 +119,7 @@ const attendanceChartConfig = {
 
 export default function StudentDashboard() {
   const router = useRouter()
+  const isMobile = useIsMobile()
   const [timetableEntries, setTimetableEntries] = useState<TimetableEntry[]>([])
   const [timetableError, setTimetableError] = useState<string | null>(null)
   const [cardCounts, setCardCounts] = useState({
@@ -309,6 +311,24 @@ export default function StudentDashboard() {
     return [{ name: "attendance", value: attendancePercent, fill: "var(--color-sidebar-bg)" }]
   }, [attendancePercent])
 
+  const attendanceChartSizing = useMemo(
+    () =>
+      isMobile
+        ? {
+            innerRadius: 100,
+            outerRadius: 125,
+            polarRadius: [80, 62] as [number, number],
+            labelYOffset: 12,
+          }
+        : {
+            innerRadius: 114,
+            outerRadius: 145,
+            polarRadius: [90, 70] as [number, number],
+            labelYOffset: 18,
+          },
+    [isMobile],
+  )
+
   const currentLesson = useMemo(() => {
     const todayKey = normalizeDay(todayEnglish)
     const todayEntries = timetableEntries.filter((entry) => normalizeDay(entry.day) === todayKey)
@@ -369,24 +389,23 @@ export default function StudentDashboard() {
     <div className="flex flex-1 flex-col">
       <div className="@container/main flex flex-1 flex-col gap-2">
         <div className="flex flex-col gap-6 py-4 md:gap-6 md:py-6">
-          <SectionCards items={studentCards} />
+          <SectionCards items={studentCards} mobileStack />
 
           <div className="px-4 lg:px-6">
-            <div className="flex flex-wrap items-start gap-40 mr-20">
-                
-                <div className="relative mt-4 flex h-[170px] w-[200px] items-center justify-center">
-                  <div className="mt-20">
+            <div className="flex flex-col items-center gap-6 md:flex-row md:flex-wrap md:items-start md:justify-between md:gap-10">
+                <div className="relative mt-2 flex w-full md:mr-10 max-w-[320px] items-center justify-center md:mt-4 md:h-[170px] md:w-[200px]">
+                  <div className="mt-2 md:mt-20">
                     <div className="text-center text-lg font-semibold text-black">الحضور والغياب</div>
- <ChartContainer
+                  <ChartContainer
                     config={attendanceChartConfig}
-                    className="h-[240px] w-[240px]"
+                    className="h-[210px] w-[210px] sm:h-[220px] sm:w-[220px]  md:h-[240px] md:w-[240px]"
                   >
                     <RadialBarChart
                       data={attendanceChartData}
                       startAngle={180}
                       endAngle={0}
-                      innerRadius={114}
-                      outerRadius={145}
+                      innerRadius={attendanceChartSizing.innerRadius}
+                      outerRadius={attendanceChartSizing.outerRadius}
                       cx="50%"
                       cy="100%"
                     >
@@ -401,7 +420,7 @@ export default function StudentDashboard() {
                         radialLines={false}
                         stroke="none"
                         className="first:fill-transparent last:fill-background"
-                        polarRadius={[90, 70]}
+                        polarRadius={attendanceChartSizing.polarRadius}
                       />
                       <RadialBar dataKey="value" background={{ fill: "#D9DEEC" }} cornerRadius={8} />
                       <PolarRadiusAxis tick={false} tickLine={false} axisLine={false} domain={[0, 100]}>
@@ -411,7 +430,7 @@ export default function StudentDashboard() {
                               return (
                                 <text
                                   x={viewBox.cx}
-                                  y={(viewBox.cy || 0) - 18}
+                                  y={(viewBox.cy || 0) - attendanceChartSizing.labelYOffset}
                                   textAnchor="middle"
                                   dominantBaseline="middle"
                                 >
@@ -440,7 +459,7 @@ export default function StudentDashboard() {
                 enterLabel="ادخل"
                 isActive={Boolean(currentLesson)}
                 disabled={!currentLesson}
-                className="m-0"
+                className="m-0 w-full max-w-[420px] md:w-auto md:max-w-none"
                 onEnter={handleEnterCurrentLesson}
               />
             </div>
@@ -453,45 +472,47 @@ export default function StudentDashboard() {
                 <div className="text-xs text-red-600">{timetableError}</div>
               ) : null}
             </div>
-            <div className="grid grid-cols-9 gap-2 text-sm">
-              <div className="flex items-center justify-center rounded-lg bg-[#EAF6FC] px-2 py-3 font-semibold text-black">
-                اليوم
-              </div>
-              {timetableSlots.map((slot) => (
-                <div
-                  key={slot.label}
-                  className="flex items-center justify-center rounded-lg bg-[#EAF6FC] px-1 py-3 text-black"
-                >
-                  {slot.label} من {formatTime(slot.start)}-{formatTime(slot.end)}
+            <div className="overflow-x-auto">
+              <div className="grid min-w-[980px] grid-cols-9 gap-2 text-sm">
+                <div className="flex items-center justify-center rounded-lg bg-[#EAF6FC] px-2 py-3 font-semibold text-black">
+                  اليوم
                 </div>
-              ))}
-              {timetableByDay.map(({ day, slots }) => (
-                <Fragment key={day.value}>
-                  <div className="flex items-center justify-center rounded-lg bg-[#EAF6FC] px-2 py-3 font-semibold text-black">
-                    {day.label}
+                {timetableSlots.map((slot) => (
+                  <div
+                    key={slot.label}
+                    className="flex items-center justify-center rounded-lg bg-[#EAF6FC] px-1 py-3 text-black"
+                  >
+                    {slot.label} من {formatTime(slot.start)}-{formatTime(slot.end)}
                   </div>
-                  {slots.map((entry, index) => {
-                    const isToday = normalizeDay(day.value) === normalizeDay(todayEnglish)
-                    const isActive =
-                      entry &&
-                      isToday &&
-                      currentMinutes >= toMinutes(entry.start_time) &&
-                      currentMinutes < toMinutes(entry.end_time)
-                    return (
-                      <div
-                        key={`${day.value}-${index}`}
-                        className={`flex h-12 items-center justify-center rounded-lg border-2 text-sm ${
-                          isActive
-                            ? "border-green-200 bg-green-100 text-green-900"
-                            : "border-[#EAF6FC] bg-white text-slate-700"
-                        }`}
-                      >
-                        {entry?.subject_name ?? (entry?.subject_id ? `مادة ${entry.subject_id}` : "—")}
-                      </div>
-                    )
-                  })}
-                </Fragment>
-              ))}
+                ))}
+                {timetableByDay.map(({ day, slots }) => (
+                  <Fragment key={day.value}>
+                    <div className="flex items-center justify-center rounded-lg bg-[#EAF6FC] px-2 py-3 font-semibold text-black">
+                      {day.label}
+                    </div>
+                    {slots.map((entry, index) => {
+                      const isToday = normalizeDay(day.value) === normalizeDay(todayEnglish)
+                      const isActive =
+                        entry &&
+                        isToday &&
+                        currentMinutes >= toMinutes(entry.start_time) &&
+                        currentMinutes < toMinutes(entry.end_time)
+                      return (
+                        <div
+                          key={`${day.value}-${index}`}
+                          className={`flex h-12 items-center justify-center rounded-lg border-2 px-1 text-sm ${
+                            isActive
+                              ? "border-green-200 bg-green-100 text-green-900"
+                              : "border-[#EAF6FC] bg-white text-slate-700"
+                          }`}
+                        >
+                          {entry?.subject_name ?? (entry?.subject_id ? `مادة ${entry.subject_id}` : "—")}
+                        </div>
+                      )
+                    })}
+                  </Fragment>
+                ))}
+              </div>
             </div>
           </div>
         </div>

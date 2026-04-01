@@ -69,9 +69,19 @@ const defaultItems: SectionCardItem[] = [
   },
 ]
 
-export function SectionCards({ items = defaultItems }: { items?: SectionCardItem[] }) {
+export function SectionCards({
+  items = defaultItems,
+  mobileStack = false,
+}: {
+  items?: SectionCardItem[]
+  mobileStack?: boolean
+}) {
+  const containerClass = mobileStack
+    ? "grid grid-cols-1 gap-4 px-4 lg:px-6 sm:grid-flow-col sm:auto-cols-[minmax(220px,1fr)] sm:overflow-x-auto"
+    : "grid grid-flow-col auto-cols-[minmax(220px,1fr)] gap-4 px-4 lg:px-6 overflow-x-auto"
+
   return (
-    <div className="grid grid-flow-col auto-cols-[minmax(220px,1fr)] gap-4 px-4 lg:px-6 overflow-x-auto">
+    <div className={containerClass}>
       {items.map((item) => (
         <Card
           key={item.title}

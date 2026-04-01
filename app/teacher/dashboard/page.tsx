@@ -22,6 +22,7 @@ import {
   SidebarMenuButton,
   SidebarMenuItem,
   SidebarProvider,
+  SidebarTrigger,
 } from "@/components/ui/sidebar"
 import { NavMain } from "@/components/nav-main"
 import { SectionCards } from "@/components/section-cards"
@@ -358,30 +359,36 @@ export default function TeacherDashboard() {
       <SidebarInset className="bg-white text-[var(--color-text)]">
         <header className="group-has-data-[collapsible=icon]/sidebar-wrapper:h-12 flex h-12 shrink-0 items-center gap-2 border-b transition-[width,height] ease-linear">
           <div className="flex w-full items-center gap-1 px-4 lg:gap-2 lg:px-6">
+            <SidebarTrigger className="md:hidden" />
             <h1 className="text-base font-medium">لوحة المعلم</h1>
           </div>
         </header>
         <div className="flex flex-1 flex-col">
           <div className="@container/main flex flex-1 flex-col gap-2">
             <div className="flex flex-col gap-4 py-4 md:gap-6 md:py-6">
-              <SectionCards items={teacherCards} />
+              <SectionCards items={teacherCards} mobileStack />
               <div className="grid gap-4 lg:grid-cols-2">
-                <div className="rounded-2xl bg-transparent mt-12 px-10">
+                <div className="mt-2 rounded-2xl bg-transparent px-4 sm:px-6 lg:mt-12 lg:px-10">
                   <div className="flex items-center justify-between mb-4">
                     <h3 className="text-sm font-semibold">الخطة الدراسية</h3>
                   </div>
                   <div className="flex flex-col gap-4">
                     {teacherPlanRows.length > 0 ? (
                       teacherPlanRows.map((row) => (
-                        <div key={row.id} className="grid grid-cols-[80px_1fr_40px] items-center gap-3">
-                          <span className="text-[11px] text-black text-center">{row.label}</span>
+                        <div
+                          key={row.id}
+                          className="grid grid-cols-[minmax(72px,110px)_1fr_44px] items-center gap-2 sm:gap-3"
+                        >
+                          <span className="truncate text-center text-[11px] text-black">
+                            {row.label}
+                          </span>
                           <div className="relative h-3 rounded-full bg-[#B0D2DE] overflow-hidden">
                             <div
                               className="absolute inset-y-0 right-0 rounded-full bg-[var(--color-sidebar-bg)]"
                               style={{ width: `${row.value}%` }}
                             />
                           </div>
-                          <span className="text-[11px] text-black text-center">{row.value}%</span>
+                          <span className="text-center text-[11px] text-black">{row.value}%</span>
                         </div>
                       ))
                     ) : (
@@ -392,22 +399,22 @@ export default function TeacherDashboard() {
                 <TeacherAttendancePie />
               </div>
             
-              <div className="rounded-2xl bg-white p-4 mx-4 shadow-sm border border-slate-100">
+              <div className="mx-4 rounded-2xl border border-slate-100 bg-white p-4 shadow-sm">
                 <div className="flex flex-wrap items-center justify-between gap-3 mb-3">
                   <div className="text-sm font-semibold">جدول المعلم</div>
                   <div className="flex flex-wrap items-center gap-2">
                     <select
-                      className="h-9 rounded-lg bg-[var(--color-sidebar-bg)] text-white px-3 text-sm  outline-none"
+                      className="h-9 min-w-[110px] rounded-lg bg-[var(--color-sidebar-bg)] px-3 text-sm text-white outline-none"
                       defaultValue=""
                       aria-label="اختر المرحلة"
                     >
-                      <option  value="" disabled>المرحلة</option>
+                      <option value="" disabled>المرحلة</option>
                       <option value="secondary">ثانوي</option>
                       <option value="middle">متوسط</option>
                       <option value="primary">ابتدائي</option>
                     </select>
                     <select
-                      className="h-9 rounded-lg bg-[var(--color-sidebar-bg)] text-white px-3 text-sm outline-none"
+                      className="h-9 min-w-[96px] rounded-lg bg-[var(--color-sidebar-bg)] px-3 text-sm text-white outline-none"
                       defaultValue=""
                       aria-label="اختر الصف"
                     >
@@ -424,45 +431,47 @@ export default function TeacherDashboard() {
                     </button>
                   </div>
                 </div>
-                <div className="grid grid-cols-9 gap-2 text-sm">
-                  <div className="flex items-center justify-center rounded-lg bg-[#EAF6FC] px-2 py-3 font-semibold text-black">
-                    اليوم
-                  </div>
-                  {timetableSlots.map((slot) => (
-                    <div
-                      key={slot.label}
-                      className="flex items-center justify-center rounded-lg bg-[#EAF6FC] px-1 py-3  text-black"
-                    >
-                      {slot.label} من {formatTime(slot.start)}-{formatTime(slot.end)}
+                <div className="overflow-x-auto">
+                  <div className="grid min-w-[980px] grid-cols-9 gap-2 text-sm">
+                    <div className="flex items-center justify-center rounded-lg bg-[#EAF6FC] px-2 py-3 font-semibold text-black">
+                      اليوم
                     </div>
-                  ))}
-                  {timetableByDay.map(({ day, slots }) => (
-                    <Fragment key={day.value}>
-                      <div className="flex items-center justify-center rounded-lg bg-[#EAF6FC] px-2 py-3 font-semibold text-black">
-                        {day.label}
+                    {timetableSlots.map((slot) => (
+                      <div
+                        key={slot.label}
+                        className="flex items-center justify-center rounded-lg bg-[#EAF6FC] px-1 py-3 text-black"
+                      >
+                        {slot.label} من {formatTime(slot.start)}-{formatTime(slot.end)}
                       </div>
-                      {slots.map((entry, index) => {
-                        const isToday = normalizeDay(day.value) === normalizeDay(todayEnglish)
-                        const isActive =
-                          entry &&
-                          isToday &&
-                          currentMinutes >= toMinutes(entry.start_time) &&
-                          currentMinutes <= toMinutes(entry.end_time)
-                        return (
-                          <div
-                            key={`${day.value}-${index}`}
-                            className={`flex h-12 items-center justify-center rounded-lg border-2 text-sm ${
-                              isActive
-                                ? "border-green-200 bg-green-100 text-green-900"
-                                : "border-[#EAF6FC] bg-white text-slate-700"
-                            }`}
-                          >
-                            {entry?.subject_name ?? ""}
-                          </div>
-                        )
-                      })}
-                    </Fragment>
-                  ))}
+                    ))}
+                    {timetableByDay.map(({ day, slots }) => (
+                      <Fragment key={day.value}>
+                        <div className="flex items-center justify-center rounded-lg bg-[#EAF6FC] px-2 py-3 font-semibold text-black">
+                          {day.label}
+                        </div>
+                        {slots.map((entry, index) => {
+                          const isToday = normalizeDay(day.value) === normalizeDay(todayEnglish)
+                          const isActive =
+                            entry &&
+                            isToday &&
+                            currentMinutes >= toMinutes(entry.start_time) &&
+                            currentMinutes <= toMinutes(entry.end_time)
+                          return (
+                            <div
+                              key={`${day.value}-${index}`}
+                              className={`flex h-12 items-center justify-center rounded-lg border-2 px-1 text-sm ${
+                                isActive
+                                  ? "border-green-200 bg-green-100 text-green-900"
+                                  : "border-[#EAF6FC] bg-white text-slate-700"
+                              }`}
+                            >
+                              {entry?.subject_name ?? ""}
+                            </div>
+                          )
+                        })}
+                      </Fragment>
+                    ))}
+                  </div>
                 </div>
               </div>
             </div>
