@@ -10,7 +10,6 @@ import {
   LayersIcon,
   ListChecksIcon,
   RadioTowerIcon,
-  SearchIcon,
   SettingsIcon,
   UsersIcon,
   VideoIcon,
@@ -18,6 +17,7 @@ import {
 } from "lucide-react"
 import Link from "next/link"
 
+import { apiFetch } from "@/lib/api/client"
 import { NavMain } from "@/components/nav-main"
 import { NavUser } from "@/components/nav-user"
 import {
@@ -127,6 +127,7 @@ type SchoolSetting = {
 
 export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
   const [setting, setSetting] = React.useState<SchoolSetting | null>(null)
+  const [canCreateManager, setCanCreateManager] = React.useState(false)
 
   React.useEffect(() => {
     let cancelled = false
@@ -162,6 +163,49 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
     }
   }, [])
 
+  React.useEffect(() => {
+    let cancelled = false
+
+    const loadPermissions = async () => {
+      try {
+        const response = (await apiFetch("/auth/me")) as {
+          data?: { user_name?: string | null; role?: string | null }
+        }
+        const userName = response?.data?.user_name ?? ""
+        const role = response?.data?.role ?? ""
+
+        if (!cancelled) {
+          setCanCreateManager(role === "Manager" && userName === "system.manager")
+        }
+      } catch {
+        if (!cancelled) {
+          setCanCreateManager(false)
+        }
+      }
+    }
+
+    void loadPermissions()
+
+    return () => {
+      cancelled = true
+    }
+  }, [])
+
+  const navItems = React.useMemo(() => {
+    if (canCreateManager) {
+      return [
+        ...data.navMain,
+        {
+          title: "إنشاء مدير",
+          url: "/manager/managers/add",
+          icon: UsersIcon,
+        },
+      ]
+    }
+
+    return data.navMain
+  }, [canCreateManager])
+
   return (
     <Sidebar collapsible="offcanvas" {...props}>
       <SidebarHeader>
@@ -187,7 +231,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
         </Link>
       </SidebarHeader>
       <SidebarContent>
-        <NavMain items={data.navMain} />
+        <NavMain items={navItems} />
       </SidebarContent>
       <SidebarFooter className="p-3">
         <div className="rounded-md bg-white p-2 shadow-sm">

@@ -103,6 +103,7 @@ export default function TeacherPaperWorkPage() {
   const [subjectId, setSubjectId] = useState<number | "">("")
   const [paperFile, setPaperFile] = useState<File | null>(null)
   const [uploading, setUploading] = useState(false)
+  const [deletingPaperId, setDeletingPaperId] = useState<number | null>(null)
   const [uploadError, setUploadError] = useState<string | null>(null)
   const [uploadSuccess, setUploadSuccess] = useState<string | null>(null)
 
@@ -224,6 +225,31 @@ export default function TeacherPaperWorkPage() {
       setUploadSuccess(null)
     } finally {
       setUploading(false)
+    }
+  }
+
+  const handleDeletePaper = async (paperId: number) => {
+    if (typeof window !== "undefined") {
+      const confirmed = window.confirm("هل أنت متأكد من حذف ورقة العمل؟")
+      if (!confirmed) return
+    }
+
+    try {
+      setDeletingPaperId(paperId)
+      setUploadError(null)
+      setUploadSuccess(null)
+
+      await apiFetch(`/teacher/papers-work/${paperId}`, {
+        method: "DELETE",
+      })
+
+      setUploadSuccess("تم حذف ورقة العمل بنجاح.")
+      await loadPapers()
+    } catch (error) {
+      setUploadError(error instanceof Error ? error.message : "تعذر حذف ورقة العمل.")
+      setUploadSuccess(null)
+    } finally {
+      setDeletingPaperId(null)
     }
   }
 
@@ -363,12 +389,13 @@ export default function TeacherPaperWorkPage() {
                           <th className="px-3 py-2 text-right font-semibold">الصف</th>
                           <th className="px-3 py-2 text-right font-semibold">الملف</th>
                           <th className="px-3 py-2 text-right font-semibold">التاريخ</th>
+                          <th className="px-3 py-2 text-right font-semibold">الإجراءات</th>
                         </tr>
                       </thead>
                       <tbody>
                         {papers.length === 0 ? (
                           <tr>
-                            <td className="px-3 py-4 text-center text-slate-500" colSpan={5}>
+                            <td className="px-3 py-4 text-center text-slate-500" colSpan={6}>
                               لا توجد أوراق عمل مطابقة للفلاتر المختارة.
                             </td>
                           </tr>
@@ -399,6 +426,16 @@ export default function TeacherPaperWorkPage() {
                                   )}
                                 </td>
                                 <td className="px-3 py-2">{paper.created_at ?? "-"}</td>
+                                <td className="px-3 py-2">
+                                  <button
+                                    type="button"
+                                    className="rounded-lg border border-red-200 px-3 py-1 text-xs font-medium text-red-600 transition hover:bg-red-50 disabled:cursor-not-allowed disabled:opacity-60"
+                                    onClick={() => void handleDeletePaper(paper.id)}
+                                    disabled={deletingPaperId === paper.id}
+                                  >
+                                    {deletingPaperId === paper.id ? "جارٍ الحذف..." : "حذف"}
+                                  </button>
+                                </td>
                               </tr>
                             )
                           })

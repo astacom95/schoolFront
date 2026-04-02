@@ -106,7 +106,7 @@ export default function LoginPage() {
             value={login}
             onChange={(e) => setLogin(e.target.value)}
             style={{ width: "100%", padding: 10, marginTop: 6 }}
-            placeholder="system.manager أو manager@test.com"
+            placeholder="username أو manager@test.com"
             autoComplete="username"
             required
           />

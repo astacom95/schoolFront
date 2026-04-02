@@ -203,7 +203,7 @@ export function LoginPageClient({ initialBranding }: LoginPageClientProps) {
                         dir="ltr"
                         value={credentials.userName}
                         onChange={(event) => setCredentials((prev) => ({ ...prev, userName: event.target.value }))}
-                        placeholder="system.manager"
+                        placeholder="username"
                         autoComplete="username"
                       />
                     </div>
