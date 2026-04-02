@@ -238,7 +238,6 @@ export default function TeacherLessonsPage() {
     if (!confirmed) return
 
     try {
-      setDeletingLessonId(lessonId)
       setDeleteErrorByLesson((current) => ({ ...current, [lessonId]: "" }))
       await apiFetch(`/teacher/lessons/${lessonId}`, { method: "DELETE" })
       await loadPageData()
@@ -248,7 +247,6 @@ export default function TeacherLessonsPage() {
         [lessonId]: err instanceof Error ? err.message : "تعذر حذف الدرس.",
       }))
     } finally {
-      setDeletingLessonId(null)
     }
   }
 
