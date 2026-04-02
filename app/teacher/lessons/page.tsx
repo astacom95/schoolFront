@@ -129,6 +129,7 @@ export default function TeacherLessonsPage() {
   const [lessonError, setLessonError] = useState<string | null>(null)
   const [startingLessonId, setStartingLessonId] = useState<number | null>(null)
   const [liveErrorByLesson, setLiveErrorByLesson] = useState<Record<number, string>>({})
+  const [deleteErrorByLesson, setDeleteErrorByLesson] = useState<Record<number, string>>({})
   const [meetLinkByLesson, setMeetLinkByLesson] = useState<Record<number, string>>({})
 
   const loadPageData = async () => {
@@ -229,6 +230,25 @@ export default function TeacherLessonsPage() {
       }))
     } finally {
       setStartingLessonId(null)
+    }
+  }
+
+  const handleDeleteLesson = async (lessonId: number) => {
+    const confirmed = window.confirm("هل أنت متأكد من حذف هذا الدرس؟ لا يمكن التراجع بعد الحذف.")
+    if (!confirmed) return
+
+    try {
+      setDeletingLessonId(lessonId)
+      setDeleteErrorByLesson((current) => ({ ...current, [lessonId]: "" }))
+      await apiFetch(`/teacher/lessons/${lessonId}`, { method: "DELETE" })
+      await loadPageData()
+    } catch (err) {
+      setDeleteErrorByLesson((current) => ({
+        ...current,
+        [lessonId]: err instanceof Error ? err.message : "تعذر حذف الدرس.",
+      }))
+    } finally {
+      setDeletingLessonId(null)
     }
   }
 
@@ -360,6 +380,7 @@ export default function TeacherLessonsPage() {
                     {lessons.map((lesson) => {
                       const inputValue = meetLinkByLesson[lesson.id] ?? ""
                       const lessonErrorText = liveErrorByLesson[lesson.id]
+                      const lessonDeleteErrorText = deleteErrorByLesson[lesson.id]
                       return (
                         <div key={lesson.id} className="rounded-2xl border border-slate-100 bg-white p-4 shadow-sm flex flex-col gap-3">
                           <div>
@@ -368,12 +389,15 @@ export default function TeacherLessonsPage() {
                             <p className="text-xs text-slate-400">{lesson.created_at ?? "—"}</p>
                           </div>
 
-                          <Link
-                            href={`/teacher/lessons/${lesson.id}`}
-                            className="inline-flex h-9 items-center justify-center rounded-xl border border-slate-200 px-4 text-sm font-medium text-[var(--color-text)] hover:bg-slate-50"
-                          >
-                            عرض تفاصيل الدرس
-                          </Link>
+                          <div>
+                            <Link
+                              href={`/teacher/lessons/${lesson.id}`}
+                              className="inline-flex w-full h-9 items-center justify-center rounded-xl border border-slate-200 px-4 text-sm font-medium text-[var(--color-text)] hover:bg-slate-50"
+                            >
+                              عرض التفاصيل
+                            </Link>
+                         
+                          </div>
 
                           <a
                             href="https://mail.google.com/mail/u/0/#calls"
@@ -406,8 +430,13 @@ export default function TeacherLessonsPage() {
                             {startingLessonId === lesson.id ? "جارٍ الحفظ..." : "Start Now"}
                           </button>
 
+                     
+
                           {lessonErrorText ? (
                             <div className="text-sm text-red-600">{lessonErrorText}</div>
+                          ) : null}
+                          {lessonDeleteErrorText ? (
+                            <div className="text-sm text-red-600">{lessonDeleteErrorText}</div>
                           ) : null}
 
                           {lesson.has_media && lesson.meet_link ? (

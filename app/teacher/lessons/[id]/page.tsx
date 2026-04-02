@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react"
 import Link from "next/link"
-import { useParams } from "next/navigation"
+import { useParams, useRouter } from "next/navigation"
 import {
   BarChartIcon,
   BookOpenIcon,
@@ -54,10 +54,12 @@ const teacherNav = [
 
 export default function TeacherLessonDetailsPage() {
   const params = useParams()
+  const router = useRouter()
   const lessonId = Number(params?.id)
   const [lesson, setLesson] = useState<LessonDetails | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
+  const [deleting, setDeleting] = useState(false)
 
   useEffect(() => {
     const load = async () => {
@@ -82,6 +84,23 @@ export default function TeacherLessonDetailsPage() {
     }
     void load()
   }, [lessonId])
+
+  const handleDeleteLesson = async () => {
+    if (!lessonId) return
+    const confirmed = window.confirm("هل أنت متأكد من حذف هذا الدرس؟ لا يمكن التراجع بعد الحذف.")
+    if (!confirmed) return
+
+    try {
+      setDeleting(true)
+      setError(null)
+      await apiFetch(`/teacher/lessons/${lessonId}`, { method: "DELETE" })
+      router.push("/teacher/lessons")
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "تعذر حذف الدرس.")
+    } finally {
+      setDeleting(false)
+    }
+  }
 
   return (
     <SidebarProvider>
@@ -141,6 +160,22 @@ export default function TeacherLessonDetailsPage() {
                 <p className="text-sm text-slate-500">{lesson.subject_name ?? "—"}</p>
                 <p className="text-sm text-slate-600">{lesson.summary ?? "لا يوجد وصف لهذا الدرس."}</p>
                 <p className="text-xs text-slate-400">{lesson.created_at ?? "—"}</p>
+                <div className="flex flex-wrap gap-2">
+                  <Link
+                    href={`/teacher/lessons/${lesson.id}/edit`}
+                    className="inline-flex h-10 items-center rounded-lg border border-slate-200 px-4 text-sm font-semibold text-slate-700 hover:bg-slate-50"
+                  >
+                    تعديل الدرس
+                  </Link>
+                  <button
+                    type="button"
+                    onClick={handleDeleteLesson}
+                    disabled={deleting}
+                    className="inline-flex h-10 items-center rounded-lg border border-red-200 bg-red-50 px-4 text-sm font-semibold text-red-700 hover:bg-red-100 disabled:opacity-60"
+                  >
+                    {deleting ? "جارٍ الحذف..." : "حذف الدرس"}
+                  </button>
+                </div>
 
                 {lesson.meet_link ? (
                   <a
