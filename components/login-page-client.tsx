@@ -159,7 +159,7 @@ export function LoginPageClient({ initialBranding }: LoginPageClientProps) {
           </div>
         </aside>
 
-        <div className="login-form-side">
+        <div className="login-form-side sm:flex flex-col">
           <div className="login-mobile-branding">
             <div className="login-mobile-brand-card">
               {/* eslint-disable-next-line @next/next/no-img-element */}
