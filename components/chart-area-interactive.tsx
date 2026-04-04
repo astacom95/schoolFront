@@ -39,7 +39,7 @@ type MonthlyLessonPoint = {
 const chartConfig = {
   lessons: {
     label: "الدروس",
-    color: "hsl(var(--chart-1))",
+    color: "var(--color-sidebar-bg)",
   },
 } satisfies ChartConfig
 
