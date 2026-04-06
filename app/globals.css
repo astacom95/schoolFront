@@ -346,7 +346,7 @@ button {
   font-size: clamp(2rem, 3vw, 2.75rem);
   line-height: 1.2;
   font-weight: 800;
-  color: #111827;
+  color: var(--color-sidebar-bg);
 }
 
 .login-form-subtitle {

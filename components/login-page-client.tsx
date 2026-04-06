@@ -245,13 +245,6 @@ export function LoginPageClient({ initialBranding }: LoginPageClientProps) {
                   </button>
                 </form>
 
-                <div className="login-footer-note">
-                  <p className="login-footer-text">
-                    ليس لديك حساب؟
-                    {" "}
-                    <span className="login-footer-link">تواصل مع الإدارة</span>
-                  </p>
-                </div>
               </div>
             )}
           </div>

@@ -17,6 +17,7 @@ import { Button } from "@/components/ui/button"
 export type StudentRow = {
   id: number | string
   full_name: string
+  user_name?: string | null
   email?: string | null
   phone_number?: string | null
   level?: string | null

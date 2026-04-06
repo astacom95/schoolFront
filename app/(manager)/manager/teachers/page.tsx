@@ -54,6 +54,7 @@ type TeacherRow = StudentRow & {
 
 type EditTeacherForm = {
   full_name: string
+  user_name: string
   email: string
   phone_number: string
   gender: "Male" | "Female"
@@ -61,6 +62,7 @@ type EditTeacherForm = {
   country: string
   state: string
   city: string
+  password: string
 }
 
 export default function ManagerTeachersPage() {
@@ -76,9 +78,12 @@ export default function ManagerTeachersPage() {
   const [savePending, setSavePending] = useState(false)
   const [deletePending, setDeletePending] = useState(false)
   const [message, setMessage] = useState<{ text: string; variant: "success" | "error" } | null>(null)
+  const [showPassword, setShowPassword] = useState(false)
+  const [editPersonalImage, setEditPersonalImage] = useState<File | null>(null)
   const [specs, setSpecs] = useState<SpecRow[]>([{ id: crypto.randomUUID(), level_id: "", class_id: "", subject_id: "" }])
   const [editForm, setEditForm] = useState<EditTeacherForm>({
     full_name: "",
+    user_name: "",
     email: "",
     phone_number: "",
     gender: "Male",
@@ -86,11 +91,13 @@ export default function ManagerTeachersPage() {
     country: "",
     state: "",
     city: "",
+    password: "",
   })
 
   const normalizeTeacher = (item: any, idx = 0): TeacherRow => ({
     id: item.id ?? idx,
     full_name: item.full_name ?? "",
+    user_name: item.user_name ?? item.user?.user_name ?? "",
     email: item.email ?? "",
     phone_number: item.phone_number ?? "",
     gender: item.gender ?? "",
@@ -193,6 +200,7 @@ export default function ManagerTeachersPage() {
     setTeacherToEdit(teacher)
     setEditForm({
       full_name: teacher.full_name ?? "",
+      user_name: teacher.user_name ?? "",
       email: teacher.email ?? "",
       phone_number: teacher.phone_number ?? "",
       gender: teacher.gender === "Female" ? "Female" : "Male",
@@ -200,7 +208,10 @@ export default function ManagerTeachersPage() {
       country: teacher.country ?? "",
       state: teacher.state ?? "",
       city: teacher.city ?? "",
+      password: "",
     })
+    setShowPassword(false)
+    setEditPersonalImage(null)
     setSpecs(
       teacher.specializations?.length
         ? teacher.specializations.map((spec) => ({
@@ -225,19 +236,32 @@ export default function ManagerTeachersPage() {
 
     setSavePending(true)
     try {
+      const formData = new FormData()
+      formData.append("_method", "PUT")
+      formData.append("full_name", editForm.full_name)
+      formData.append("user_name", editForm.user_name)
+      formData.append("email", editForm.email)
+      formData.append("phone_number", editForm.phone_number)
+      formData.append("gender", editForm.gender)
+      formData.append("date_of_birth", editForm.date_of_birth)
+      formData.append("country", editForm.country)
+      formData.append("state", editForm.state)
+      formData.append("city", editForm.city)
+      if (editForm.password.trim()) {
+        formData.append("password", editForm.password)
+      }
+      if (editPersonalImage) {
+        formData.append("personal_image", editPersonalImage)
+      }
+      validSpecs.forEach((spec, index) => {
+        formData.append(`specializations[${index}][level_id]`, String(spec.level_id))
+        formData.append(`specializations[${index}][class_id]`, String(spec.class_id))
+        formData.append(`specializations[${index}][subject_id]`, String(spec.subject_id))
+      })
+
       const res = await fetch(`${apiRoot}/manager/teachers/${teacherToEdit.id}`, {
-        method: "PUT",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          ...editForm,
-          specializations: validSpecs.map((spec) => ({
-            level_id: Number(spec.level_id),
-            class_id: Number(spec.class_id),
-            subject_id: Number(spec.subject_id),
-          })),
-        }),
+        method: "POST",
+        body: formData,
       })
       const json = await res.json().catch(() => null)
 
@@ -249,6 +273,8 @@ export default function ManagerTeachersPage() {
       setTeachers((prev) => prev.map((teacher) => (teacher.id === updatedTeacher.id ? { ...teacher, ...updatedTeacher } : teacher)))
       setSelectedTeacher((prev) => (prev?.id === updatedTeacher.id ? { ...prev, ...updatedTeacher } : prev))
       setTeacherToEdit(null)
+      setShowPassword(false)
+      setEditPersonalImage(null)
       setMessage({ text: "تم تحديث بيانات المعلم والتخصصات بنجاح.", variant: "success" })
     } catch (error: any) {
       console.error("فشل تحديث المعلم", error)
@@ -350,6 +376,7 @@ export default function ManagerTeachersPage() {
               </div>
               <div className="grid gap-4 md:grid-cols-3">
                 <InfoTile title="الاسم الكامل" value={selectedTeacher.full_name} />
+                <InfoTile title="اسم المستخدم" value={selectedTeacher.user_name || "—"} />
                 <InfoTile title="البريد الإلكتروني" value={selectedTeacher.email || "—"} />
                 <InfoTile title="رقم الهاتف" value={selectedTeacher.phone_number || "—"} />
                 <InfoTile title="الجنس" value={selectedTeacher.gender || "—"} />
@@ -417,7 +444,11 @@ export default function ManagerTeachersPage() {
       <Dialog
         open={teacherToEdit !== null}
         onOpenChange={(open) => {
-          if (!open && !savePending) setTeacherToEdit(null)
+          if (!open && !savePending) {
+            setTeacherToEdit(null)
+            setShowPassword(false)
+            setEditPersonalImage(null)
+          }
         }}
       >
         <DialogContent dir="rtl" className="sm:max-w-4xl">
@@ -432,12 +463,61 @@ export default function ManagerTeachersPage() {
                 <Input value={editForm.full_name} onChange={(e) => handleFormChange("full_name", e.target.value)} />
               </div>
               <div className="flex flex-col gap-1">
+                <Label>اسم المستخدم</Label>
+                <Input value={editForm.user_name} onChange={(e) => handleFormChange("user_name", e.target.value)} />
+              </div>
+              <div className="flex flex-col gap-1">
                 <Label>البريد الإلكتروني</Label>
                 <Input type="email" value={editForm.email} onChange={(e) => handleFormChange("email", e.target.value)} />
               </div>
               <div className="flex flex-col gap-1">
                 <Label>رقم الهاتف</Label>
                 <Input value={editForm.phone_number} onChange={(e) => handleFormChange("phone_number", e.target.value)} />
+              </div>
+              <div className="flex flex-col gap-1">
+                <Label>كلمة مرور جديدة (اختياري)</Label>
+                <div className="flex items-center gap-2">
+                  <Input
+                    type={showPassword ? "text" : "password"}
+                    value={editForm.password}
+                    onChange={(e) => handleFormChange("password", e.target.value)}
+                    placeholder="اتركها فارغة بدون تغيير"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowPassword((prev) => !prev)}
+                    className="inline-flex h-10 items-center justify-center rounded-md border border-slate-300 bg-white px-3 text-xs font-medium text-black hover:bg-slate-50"
+                  >
+                    {showPassword ? "إخفاء" : "إظهار"}
+                  </button>
+                </div>
+              </div>
+              <div className="flex flex-col gap-1">
+                <Label>كلمة المرور الحالية</Label>
+                <Input value="غير متاحة لأسباب أمنية" readOnly />
+              </div>
+              <div className="flex flex-col gap-1">
+                <Label>صورة شخصية جديدة (اختياري)</Label>
+                <Input
+                  type="file"
+                  accept="image/png,image/jpeg,image/webp"
+                  onChange={(e) => setEditPersonalImage(e.target.files?.[0] ?? null)}
+                />
+              </div>
+              <div className="flex flex-col gap-1">
+                <Label>الصورة الحالية</Label>
+                <div className="h-20 w-20 rounded-md overflow-hidden border border-slate-200 bg-slate-50 flex items-center justify-center">
+                  {(teacherToEdit?.personal_image_path || selectedTeacher?.personal_image_path) ? (
+                    // eslint-disable-next-line @next/next/no-img-element
+                    <img
+                      src={resolveStorageUrl(teacherToEdit?.personal_image_path || selectedTeacher?.personal_image_path, apiBase)}
+                      alt={teacherToEdit?.full_name || selectedTeacher?.full_name || "teacher"}
+                      className="h-full w-full object-cover"
+                    />
+                  ) : (
+                    <span className="text-xs text-slate-500">لا توجد صورة</span>
+                  )}
+                </div>
               </div>
               <div className="flex flex-col gap-1">
                 <Label>الجنس</Label>

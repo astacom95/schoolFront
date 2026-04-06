@@ -268,7 +268,7 @@ export default function TeacherLessonCreatePage() {
                       </select>
                     </div>
                     <div className="grid gap-2">
-                      <label className="text-sm font-semibold">الاختبار (اختياري)</label>
+                      <label className="text-sm font-semibold">التمرين (اختياري)</label>
                       <div className="rounded-2xl border border-dashed border-slate-200 bg-[var(--color-surface-alt)] p-4 text-center">
                         <div className="mb-4 inline-flex rounded-full border border-slate-200 bg-white p-1 text-xs">
                           <button

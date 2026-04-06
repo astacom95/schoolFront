@@ -28,6 +28,7 @@ type LevelOption = {
 
 type EditStudentForm = {
   full_name: string
+  user_name: string
   email: string
   phone_number: string
   gender: "Male" | "Female"
@@ -36,6 +37,7 @@ type EditStudentForm = {
   country: string
   state: string
   city: string
+  password: string
 }
 
 export default function ManagerStudentsPage() {
@@ -51,8 +53,10 @@ export default function ManagerStudentsPage() {
   const [studentToEdit, setStudentToEdit] = useState<StudentRow | null>(null)
   const [savePending, setSavePending] = useState(false)
   const [message, setMessage] = useState<{ text: string; variant: "success" | "error" } | null>(null)
+  const [showPassword, setShowPassword] = useState(false)
   const [editForm, setEditForm] = useState<EditStudentForm>({
     full_name: "",
+    user_name: "",
     email: "",
     phone_number: "",
     gender: "Male",
@@ -61,7 +65,9 @@ export default function ManagerStudentsPage() {
     country: "",
     state: "",
     city: "",
+    password: "",
   })
+  const [editPersonalImage, setEditPersonalImage] = useState<File | null>(null)
 
   const normalizeStudent = (item: any, idx = 0): StudentRow => {
     const classIdRaw = item.class?.id ?? item.class_id ?? null
@@ -78,6 +84,7 @@ export default function ManagerStudentsPage() {
     return {
       id: item.id ?? item.student_id ?? idx,
       full_name: item.full_name ?? "",
+      user_name: item.user_name ?? item.user?.user_name ?? "",
       email: item.email ?? "",
       phone_number: item.phone_number ?? "",
       level: levelName,
@@ -171,6 +178,7 @@ export default function ManagerStudentsPage() {
     setStudentToEdit(student)
     setEditForm({
       full_name: student.full_name ?? "",
+      user_name: student.user_name ?? "",
       email: student.email ?? "",
       phone_number: student.phone_number ?? "",
       gender: student.gender === "Female" ? "Female" : "Male",
@@ -179,7 +187,10 @@ export default function ManagerStudentsPage() {
       country: student.country ?? "",
       state: student.state ?? "",
       city: student.city ?? "",
+      password: "",
     })
+    setEditPersonalImage(null)
+    setShowPassword(false)
   }
 
   const handleEditFormChange = <K extends keyof EditStudentForm>(key: K, value: EditStudentForm[K]) => {
@@ -192,12 +203,28 @@ export default function ManagerStudentsPage() {
 
     setSavePending(true)
     try {
+      const formData = new FormData()
+      formData.append("_method", "PUT")
+      formData.append("full_name", editForm.full_name)
+      formData.append("user_name", editForm.user_name)
+      formData.append("email", editForm.email)
+      formData.append("phone_number", editForm.phone_number)
+      formData.append("gender", editForm.gender)
+      formData.append("guardian_name", editForm.guardian_name)
+      formData.append("date_of_birth", editForm.date_of_birth)
+      formData.append("country", editForm.country)
+      formData.append("state", editForm.state)
+      formData.append("city", editForm.city)
+      if (editForm.password.trim()) {
+        formData.append("password", editForm.password)
+      }
+      if (editPersonalImage) {
+        formData.append("personal_image", editPersonalImage)
+      }
+
       const res = await fetch(`${apiRoot}/manager/students/${studentToEdit.id}`, {
-        method: "PUT",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify(editForm),
+        method: "POST",
+        body: formData,
       })
       const json = await res.json().catch(() => null)
 
@@ -218,6 +245,7 @@ export default function ManagerStudentsPage() {
       )
       setSelectedStudent((prev) => (prev?.id === updatedStudent.id ? { ...prev, ...updatedStudent } : prev))
       setStudentToEdit(null)
+      setEditPersonalImage(null)
       setMessage({ text: "تم تحديث بيانات الطالب بنجاح.", variant: "success" })
     } catch (error: any) {
       console.error("فشل تحديث الطالب", error)
@@ -342,6 +370,7 @@ export default function ManagerStudentsPage() {
           </div>
           <div className="grid gap-4 md:grid-cols-3">
             <InfoTile title="الاسم الكامل" value={selectedStudent.full_name} />
+            <InfoTile title="اسم المستخدم" value={selectedStudent.user_name || "—"} />
             <InfoTile title="البريد الإلكتروني" value={selectedStudent.email || "—"} />
             <InfoTile title="رقم الهاتف" value={selectedStudent.phone_number || "—"} />
             <InfoTile title="المستوى" value={selectedStudent.level || "—"} />
@@ -454,7 +483,11 @@ export default function ManagerStudentsPage() {
       <Dialog
         open={studentToEdit !== null}
         onOpenChange={(open) => {
-          if (!open && !savePending) setStudentToEdit(null)
+          if (!open && !savePending) {
+            setStudentToEdit(null)
+            setEditPersonalImage(null)
+            setShowPassword(false)
+          }
         }}
       >
         <DialogContent dir="rtl" className="sm:max-w-3xl">
@@ -484,12 +517,67 @@ export default function ManagerStudentsPage() {
                 />
               </div>
               <div className="flex flex-col gap-1">
+                <Label htmlFor="student-username">اسم المستخدم</Label>
+                <Input
+                  id="student-username"
+                  value={editForm.user_name}
+                  onChange={(e) => handleEditFormChange("user_name", e.target.value)}
+                />
+              </div>
+              <div className="flex flex-col gap-1">
                 <Label htmlFor="student-phone">رقم الهاتف</Label>
                 <Input
                   id="student-phone"
                   value={editForm.phone_number}
                   onChange={(e) => handleEditFormChange("phone_number", e.target.value)}
                 />
+              </div>
+              <div className="flex flex-col gap-1">
+                <Label htmlFor="student-password">كلمة مرور جديدة (اختياري)</Label>
+                <div className="flex items-center gap-2">
+                  <Input
+                    id="student-password"
+                    type={showPassword ? "text" : "password"}
+                    value={editForm.password}
+                    onChange={(e) => handleEditFormChange("password", e.target.value)}
+                    placeholder="اتركها فارغة بدون تغيير"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowPassword((prev) => !prev)}
+                    className="inline-flex h-10 items-center justify-center rounded-md border border-slate-300 bg-white px-3 text-xs font-medium text-black hover:bg-slate-50"
+                  >
+                    {showPassword ? "إخفاء" : "إظهار"}
+                  </button>
+                </div>
+              </div>
+              <div className="flex flex-col gap-1">
+                <Label htmlFor="student-current-password">كلمة المرور الحالية</Label>
+                <Input id="student-current-password" value="غير متاحة لأسباب أمنية" readOnly />
+              </div>
+              <div className="flex flex-col gap-1">
+                <Label htmlFor="student-personal-image">صورة شخصية جديدة (اختياري)</Label>
+                <Input
+                  id="student-personal-image"
+                  type="file"
+                  accept="image/png,image/jpeg,image/webp"
+                  onChange={(e) => setEditPersonalImage(e.target.files?.[0] ?? null)}
+                />
+              </div>
+              <div className="flex flex-col gap-1">
+                <Label>الصورة الحالية</Label>
+                <div className="h-20 w-20 rounded-md overflow-hidden border border-slate-200 bg-slate-50 flex items-center justify-center">
+                  {(studentToEdit?.personal_image_path || selectedStudent?.personal_image_path) ? (
+                    // eslint-disable-next-line @next/next/no-img-element
+                    <img
+                      src={resolveStorageUrl(studentToEdit?.personal_image_path || selectedStudent?.personal_image_path, apiBase)}
+                      alt={studentToEdit?.full_name || selectedStudent?.full_name || "student"}
+                      className="h-full w-full object-cover"
+                    />
+                  ) : (
+                    <span className="text-xs text-slate-500">لا توجد صورة</span>
+                  )}
+                </div>
               </div>
               <div className="flex flex-col gap-1">
                 <Label htmlFor="student-guardian">ولي الأمر</Label>
