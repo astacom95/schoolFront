@@ -102,7 +102,7 @@ const data = {
     },
     {
       title: "النتائج",
-      url: "#",
+      url: "/manager/results",
       icon: RadioTowerIcon,
     },
     {
