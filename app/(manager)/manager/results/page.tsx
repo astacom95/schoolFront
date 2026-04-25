@@ -1,6 +1,8 @@
 "use client"
 
 import { useEffect, useMemo, useState } from "react"
+import Link from "next/link"
+import { useSearchParams } from "next/navigation"
 
 type ExamPeriodOption = {
   id: number
@@ -49,6 +51,7 @@ export default function ManagerResultsPage() {
   const [loadingFilters, setLoadingFilters] = useState(true)
   const [loadingResults, setLoadingResults] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const searchParams = useSearchParams()
 
   useEffect(() => {
     const loadFilters = async () => {
@@ -97,6 +100,18 @@ export default function ManagerResultsPage() {
 
     void loadFilters()
   }, [apiBase])
+
+  useEffect(() => {
+    const periodFromQuery = searchParams.get("exam_period_id")
+    const classFromQuery = searchParams.get("class_id")
+
+    if (periodFromQuery && !selectedPeriodId) {
+      setSelectedPeriodId(periodFromQuery)
+    }
+    if (classFromQuery && !selectedClassId) {
+      setSelectedClassId(classFromQuery)
+    }
+  }, [searchParams, selectedClassId, selectedPeriodId])
 
   useEffect(() => {
     if (!selectedPeriodId || !selectedClassId) {
@@ -226,6 +241,7 @@ export default function ManagerResultsPage() {
                     <table className="w-full text-sm">
                       <thead className="bg-slate-50 text-slate-600">
                         <tr>
+                          <th className="px-4 py-3 text-right text-xs font-semibold">التفاصيل</th>
                           <th className="px-4 py-3 text-right text-xs font-semibold">الطالب</th>
                           <th className="px-4 py-3 text-right text-xs font-semibold">النسبة</th>
                           <th className="px-4 py-3 text-right text-xs font-semibold">المجموع</th>
@@ -235,19 +251,27 @@ export default function ManagerResultsPage() {
                       <tbody>
                         {!selectedPeriodId || !selectedClassId ? (
                           <tr>
-                            <td colSpan={4} className="px-4 py-6 text-center text-sm text-slate-500">
+                            <td colSpan={5} className="px-4 py-6 text-center text-sm text-slate-500">
                               اختر فترة الامتحان ثم الصف لعرض النتائج.
                             </td>
                           </tr>
                         ) : loadingResults ? (
                           <tr>
-                            <td colSpan={4} className="px-4 py-6 text-center text-sm text-slate-500">
+                            <td colSpan={5} className="px-4 py-6 text-center text-sm text-slate-500">
                               جارٍ تحميل النتائج...
                             </td>
                           </tr>
                         ) : rows.length > 0 ? (
                           rows.map((row) => (
                             <tr key={row.student_id} className="border-b border-slate-200/80 hover:bg-slate-50">
+                              <td className="px-4 py-3 text-slate-700">
+                                <Link
+                                  href={`/manager/results/${row.student_id}?exam_period_id=${selectedPeriodId}&class_id=${selectedClassId}`}
+                                  className="inline-flex items-center justify-center rounded-md border border-slate-200 bg-white px-3 py-1.5 text-xs font-semibold text-slate-700 transition hover:bg-slate-50"
+                                >
+                                  عرض التفاصيل
+                                </Link>
+                              </td>
                               <td className="px-4 py-3 text-slate-700">{row.student_name}</td>
                               <td className="px-4 py-3 text-slate-700">{row.percentage}%</td>
                               <td className="px-4 py-3 text-slate-600">
@@ -258,7 +282,7 @@ export default function ManagerResultsPage() {
                           ))
                         ) : (
                           <tr>
-                            <td colSpan={4} className="px-4 py-6 text-center text-sm text-slate-500">
+                            <td colSpan={5} className="px-4 py-6 text-center text-sm text-slate-500">
                               لا توجد نتائج مكتملة لهذا الصف خلال فترة الامتحان المحددة.
                             </td>
                           </tr>
