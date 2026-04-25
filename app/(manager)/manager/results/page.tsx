@@ -2,7 +2,6 @@
 
 import { useEffect, useMemo, useState } from "react"
 import Link from "next/link"
-import { useSearchParams } from "next/navigation"
 
 type ExamPeriodOption = {
   id: number
@@ -51,7 +50,6 @@ export default function ManagerResultsPage() {
   const [loadingFilters, setLoadingFilters] = useState(true)
   const [loadingResults, setLoadingResults] = useState(false)
   const [error, setError] = useState<string | null>(null)
-  const searchParams = useSearchParams()
 
   useEffect(() => {
     const loadFilters = async () => {
@@ -102,8 +100,13 @@ export default function ManagerResultsPage() {
   }, [apiBase])
 
   useEffect(() => {
-    const periodFromQuery = searchParams.get("exam_period_id")
-    const classFromQuery = searchParams.get("class_id")
+    if (typeof window === "undefined") {
+      return
+    }
+
+    const params = new URLSearchParams(window.location.search)
+    const periodFromQuery = params.get("exam_period_id")
+    const classFromQuery = params.get("class_id")
 
     if (periodFromQuery && !selectedPeriodId) {
       setSelectedPeriodId(periodFromQuery)
@@ -111,7 +114,7 @@ export default function ManagerResultsPage() {
     if (classFromQuery && !selectedClassId) {
       setSelectedClassId(classFromQuery)
     }
-  }, [searchParams, selectedClassId, selectedPeriodId])
+  }, [selectedClassId, selectedPeriodId])
 
   useEffect(() => {
     if (!selectedPeriodId || !selectedClassId) {

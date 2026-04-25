@@ -1,7 +1,7 @@
 "use client"
 
 import Link from "next/link"
-import { useParams, useSearchParams } from "next/navigation"
+import { useParams } from "next/navigation"
 import { useEffect, useMemo, useState } from "react"
 
 type StudentInfo = {
@@ -42,14 +42,23 @@ export default function ManagerStudentResultDetailsPage() {
   )
 
   const params = useParams<{ studentId: string }>()
-  const searchParams = useSearchParams()
   const studentId = params?.studentId ?? ""
-  const examPeriodId = searchParams.get("exam_period_id") ?? ""
-  const classId = searchParams.get("class_id") ?? ""
+  const [examPeriodId, setExamPeriodId] = useState("")
+  const [classId, setClassId] = useState("")
 
   const [details, setDetails] = useState<StudentResultDetailsResponse | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
+
+  useEffect(() => {
+    if (typeof window === "undefined") {
+      return
+    }
+
+    const query = new URLSearchParams(window.location.search)
+    setExamPeriodId(query.get("exam_period_id") ?? "")
+    setClassId(query.get("class_id") ?? "")
+  }, [])
 
   useEffect(() => {
     const loadDetails = async () => {
