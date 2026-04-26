@@ -349,12 +349,10 @@ export default function ManagerStudentResultDetailsPage() {
         }
 
         .sheet-logo {
-          width: 137px;
-          height: 137px;
+          width: 100px;
+          height: 100px;
           border-radius: 9999px;
           overflow: hidden;
-          background: #d8d8d8;
-          border: 2px solid #b9b9b9;
           display: flex;
           align-items: center;
           justify-content: center;
@@ -375,7 +373,7 @@ export default function ManagerStudentResultDetailsPage() {
           align-items: center;
           justify-content: space-between;
           gap: 24px;
-          font-size: 32px;
+          font-size: 28px;
           font-weight: 400;
         }
 
@@ -435,13 +433,13 @@ export default function ManagerStudentResultDetailsPage() {
           display: flex;
           flex-direction: column;
           gap: 10px;
-          font-size: 32px;
+          font-size: 28px;
           font-weight: 400;
           white-space: nowrap;
         }
 
         .sheet-motto {
-          font-size: 32px;
+          font-size: 28px;
           font-weight: 400;
           text-align: right;
         }
