@@ -452,11 +452,7 @@ export default function ManagerStudentResultDetailsPage() {
           }
 
           :global([data-sidebar="sidebar"]),
-          :global([data-sidebar="header"]),
-          :global([class*="group/sidebar-wrapper"]),
-          :global(.peer),
-          :global([data-slot="sidebar-inset"]),
-          :global(header) {
+          :global([data-sidebar="header"]) {
             display: none !important;
             visibility: hidden !important;
           }
