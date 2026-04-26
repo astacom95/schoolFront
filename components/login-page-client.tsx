@@ -1,6 +1,7 @@
 "use client";
 
 import { CSSProperties, FormEvent, useEffect, useState } from "react";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 
 import { apiFetch } from "@/lib/api/client";
@@ -243,6 +244,13 @@ export function LoginPageClient({ initialBranding }: LoginPageClientProps) {
                   <button className="login-submit" type="submit" disabled={submitting}>
                     {submitting ? "جارٍ التحقق..." : "دخول"}
                   </button>
+
+                  <Link
+                    href="/register/student"
+                    className="inline-flex h-11 w-full items-center justify-center rounded-xl border border-[#d7deeb] bg-white text-sm font-semibold text-[#1d2d4a] transition hover:bg-[#f7f9fc]"
+                  >
+                    تسجيل جديد
+                  </Link>
                 </form>
 
               </div>

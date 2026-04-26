@@ -17,6 +17,7 @@ import { Button } from "@/components/ui/button"
 export type StudentRow = {
   id: number | string
   full_name: string
+  active?: boolean
   user_name?: string | null
   email?: string | null
   phone_number?: string | null
@@ -103,7 +104,7 @@ export function DataTable({
     ? filtered.slice((page - 1) * pageSize, (page - 1) * pageSize + pageSize)
     : filtered
   const visibleRows = printFriendly && isPrinting ? filtered : paginatedRows
-  const columnCount = (showLevelClassColumns ? 6 : 4) + (showFinanceColumns ? 4 : 0)
+  const columnCount = (showLevelClassColumns ? 7 : 5) + (showFinanceColumns ? 4 : 0)
 
   useEffect(() => {
     if (!printFriendly || typeof window === "undefined") return
@@ -158,6 +159,7 @@ export function DataTable({
                     </>
                   )}
                   <TableHead className="text-right text-md">الجنس</TableHead>
+                  <TableHead className="text-right text-md">الحالة</TableHead>
                   {showFinanceColumns && (
                     <>
                       <TableHead className="text-right text-md">المبلغ المدفوع</TableHead>
@@ -186,6 +188,17 @@ export function DataTable({
                       </>
                     )}
                     <TableCell>{row.gender || "—"}</TableCell>
+                    <TableCell>
+                      {row.active === false ? (
+                        <span className="inline-flex items-center rounded-md bg-rose-50 px-2 py-1 text-xs font-semibold text-rose-700">
+                          غير نشط
+                        </span>
+                      ) : (
+                        <span className="inline-flex items-center rounded-md bg-emerald-50 px-2 py-1 text-xs font-semibold text-emerald-700">
+                          نشط
+                        </span>
+                      )}
+                    </TableCell>
                     {showFinanceColumns && (
                       <>
                         <TableCell>{row.paid_amount ?? 0}</TableCell>

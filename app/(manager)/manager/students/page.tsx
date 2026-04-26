@@ -52,6 +52,10 @@ export default function ManagerStudentsPage() {
   const [deletePending, setDeletePending] = useState(false)
   const [studentToEdit, setStudentToEdit] = useState<StudentRow | null>(null)
   const [savePending, setSavePending] = useState(false)
+  const [statusPendingId, setStatusPendingId] = useState<number | string | null>(null)
+  const [studentForPayment, setStudentForPayment] = useState<StudentRow | null>(null)
+  const [paymentAmount, setPaymentAmount] = useState("")
+  const [paymentPending, setPaymentPending] = useState(false)
   const [message, setMessage] = useState<{ text: string; variant: "success" | "error" } | null>(null)
   const [showPassword, setShowPassword] = useState(false)
   const [editForm, setEditForm] = useState<EditStudentForm>({
@@ -84,6 +88,7 @@ export default function ManagerStudentsPage() {
     return {
       id: item.id ?? item.student_id ?? idx,
       full_name: item.full_name ?? "",
+      active: item.active !== false,
       user_name: item.user_name ?? item.user?.user_name ?? "",
       email: item.email ?? "",
       phone_number: item.phone_number ?? "",
@@ -280,6 +285,86 @@ export default function ManagerStudentsPage() {
     }
   }
 
+  const handleToggleStudentStatus = async (student: StudentRow) => {
+    setStatusPendingId(student.id)
+    setMessage(null)
+
+    try {
+      const nextActive = !(student.active !== false)
+      const res = await fetch(`${apiRoot}/manager/students/${student.id}/status`, {
+        method: "PATCH",
+        headers: {
+          "Content-Type": "application/json",
+          Accept: "application/json",
+        },
+        body: JSON.stringify({ active: nextActive }),
+      })
+      const json = await res.json().catch(() => null)
+
+      if (!res.ok) {
+        throw new Error(json?.message || "فشل تحديث حالة الطالب")
+      }
+
+      const updatedStudent = normalizeStudent(json?.data ?? student, 0)
+      setStudents((prev) => prev.map((row) => (row.id === updatedStudent.id ? { ...row, ...updatedStudent } : row)))
+      setSelectedStudent((prev) => (prev?.id === updatedStudent.id ? { ...prev, ...updatedStudent } : prev))
+      setMessage({ text: nextActive ? "تم تفعيل الطالب بنجاح." : "تم تعطيل الطالب بنجاح.", variant: "success" })
+    } catch (error: any) {
+      console.error("فشل تحديث حالة الطالب", error)
+      setMessage({ text: error?.message || "حدث خطأ أثناء تحديث الحالة.", variant: "error" })
+    } finally {
+      setStatusPendingId(null)
+    }
+  }
+
+  const openPaymentDialog = (student: StudentRow) => {
+    setMessage(null)
+    setStudentForPayment(student)
+    setPaymentAmount(String(student.paid_amount ?? 0))
+  }
+
+  const handleUpdatePayment = async (event: React.FormEvent) => {
+    event.preventDefault()
+    if (!studentForPayment) return
+
+    const parsedAmount = Number(paymentAmount)
+    if (Number.isNaN(parsedAmount) || parsedAmount < 0) {
+      setMessage({ text: "الرجاء إدخال مبلغ صالح.", variant: "error" })
+      return
+    }
+
+    setPaymentPending(true)
+    setMessage(null)
+
+    try {
+      const res = await fetch(`${apiRoot}/manager/students/${studentForPayment.id}/payment`, {
+        method: "PATCH",
+        headers: {
+          "Content-Type": "application/json",
+          Accept: "application/json",
+        },
+        body: JSON.stringify({ amount: parsedAmount }),
+      })
+      const json = await res.json().catch(() => null)
+
+      if (!res.ok) {
+        throw new Error(json?.message || "فشل تحديث مبلغ الدفع")
+      }
+
+      const updatedStudent = normalizeStudent(json?.data ?? studentForPayment, 0)
+      setStudents((prev) => prev.map((row) => (row.id === updatedStudent.id ? { ...row, ...updatedStudent } : row)))
+      setSelectedStudent((prev) => (prev?.id === updatedStudent.id ? { ...prev, ...updatedStudent } : prev))
+      setStudentForPayment(null)
+      setPaymentAmount("")
+      setMessage({ text: "تم تحديث مبلغ الدفع بنجاح.", variant: "success" })
+    } catch (error: any) {
+      console.error("فشل تحديث مبلغ الدفع", error)
+      setMessage({ text: error?.message || "حدث خطأ أثناء تحديث مبلغ الدفع.", variant: "error" })
+    } finally {
+      setPaymentPending(false)
+    }
+  }
+
   return (
     <div className="manager-students-page flex flex-1 flex-col px-4 lg:px-6 py-4 md:py-6 gap-6">
       <div className="manager-students-toolbar flex items-center justify-between flex-wrap gap-3">
@@ -358,6 +443,27 @@ export default function ManagerStudentsPage() {
               </button>
               <button
                 type="button"
+                onClick={() => handleToggleStudentStatus(selectedStudent)}
+                disabled={statusPendingId === selectedStudent.id}
+                className={`inline-flex h-10 items-center rounded-md px-4 text-sm font-medium text-white disabled:cursor-not-allowed disabled:opacity-50 ${
+                  selectedStudent.active === false ? "bg-emerald-600 hover:bg-emerald-700" : "bg-amber-600 hover:bg-amber-700"
+                }`}
+              >
+                {statusPendingId === selectedStudent.id
+                  ? "جارٍ التحديث..."
+                  : selectedStudent.active === false
+                    ? "تفعيل الطالب"
+                    : "تعطيل الطالب"}
+              </button>
+              <button
+                type="button"
+                onClick={() => openPaymentDialog(selectedStudent)}
+                className="inline-flex h-10 items-center rounded-md border border-slate-300 bg-white px-4 text-sm font-medium text-black hover:bg-slate-50"
+              >
+                تعديل مبلغ الدفع
+              </button>
+              <button
+                type="button"
                 onClick={() => {
                   setMessage(null)
                   setStudentToDelete(selectedStudent)
@@ -376,9 +482,16 @@ export default function ManagerStudentsPage() {
             <InfoTile title="المستوى" value={selectedStudent.level || "—"} />
             <InfoTile title="الفصل" value={selectedStudent.class || "—"} />
             <InfoTile title="الجنس" value={selectedStudent.gender || "—"} />
+            <InfoTile
+              title="الحالة"
+              value={selectedStudent.active === false ? "غير نشط" : "نشط"}
+            />
             <InfoTile title="ولي الأمر" value={selectedStudent.guardian_name || "—"} />
             <InfoTile title="تاريخ الميلاد" value={selectedStudent.date_of_birth || "—"} />
             <InfoTile title="تاريخ التسجيل" value={selectedStudent.created_at || "—"} />
+            <InfoTile title="المبلغ المدفوع" value={String(selectedStudent.paid_amount ?? 0)} />
+            <InfoTile title="إجمالي الرسوم" value={String(selectedStudent.total_fee ?? 0)} />
+            <InfoTile title="المبلغ المتبقي" value={String(selectedStudent.remaining_amount ?? 0)} />
             <InfoTile title="الدولة" value={selectedStudent.country || "—"} />
             <InfoTile title="الولاية / المنطقة" value={selectedStudent.state || "—"} />
             <InfoTile title="المدينة" value={selectedStudent.city || "—"} />
@@ -658,6 +771,57 @@ export default function ManagerStudentsPage() {
                 className="inline-flex h-10 items-center justify-center rounded-md bg-[var(--color-sidebar-bg)] px-4 text-sm font-medium text-white hover:opacity-90 disabled:opacity-50"
               >
                 {savePending ? "جارٍ الحفظ..." : "حفظ التعديلات"}
+              </button>
+            </DialogFooter>
+          </form>
+        </DialogContent>
+      </Dialog>
+      <Dialog
+        open={studentForPayment !== null}
+        onOpenChange={(open) => {
+          if (!open && !paymentPending) {
+            setStudentForPayment(null)
+            setPaymentAmount("")
+          }
+        }}
+      >
+        <DialogContent dir="rtl" className="sm:max-w-md">
+          <DialogHeader className="text-right sm:text-right">
+            <DialogTitle>تعديل مبلغ الدفع</DialogTitle>
+            <DialogDescription>
+              {studentForPayment ? `تحديث مبلغ الدفع للطالب "${studentForPayment.full_name}".` : "تحديث مبلغ الدفع للطالب."}
+            </DialogDescription>
+          </DialogHeader>
+          <form onSubmit={handleUpdatePayment} className="grid gap-4">
+            <div className="flex flex-col gap-1">
+              <Label htmlFor="student-payment-amount">المبلغ المدفوع</Label>
+              <Input
+                id="student-payment-amount"
+                type="number"
+                min={0}
+                step="0.01"
+                value={paymentAmount}
+                onChange={(e) => setPaymentAmount(e.target.value)}
+              />
+            </div>
+            <DialogFooter className="sm:justify-start">
+              <button
+                type="button"
+                onClick={() => {
+                  setStudentForPayment(null)
+                  setPaymentAmount("")
+                }}
+                disabled={paymentPending}
+                className="inline-flex h-10 items-center justify-center rounded-md border border-slate-300 bg-white px-4 text-sm font-medium text-black hover:bg-slate-50 disabled:opacity-50"
+              >
+                إلغاء
+              </button>
+              <button
+                type="submit"
+                disabled={paymentPending}
+                className="inline-flex h-10 items-center justify-center rounded-md bg-[var(--color-sidebar-bg)] px-4 text-sm font-medium text-white hover:opacity-90 disabled:opacity-50"
+              >
+                {paymentPending ? "جارٍ الحفظ..." : "حفظ المبلغ"}
               </button>
             </DialogFooter>
           </form>

@@ -35,6 +35,11 @@ type StudentResultDetailsResponse = {
   subjects?: SubjectRow[]
 }
 
+type SchoolSetting = {
+  school_name?: string | null
+  school_logo_url?: string | null
+}
+
 export default function ManagerStudentResultDetailsPage() {
   const apiBase = useMemo(
     () => (process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000").replace(/\/+$/, ""),
@@ -47,6 +52,7 @@ export default function ManagerStudentResultDetailsPage() {
   const [classId, setClassId] = useState("")
 
   const [details, setDetails] = useState<StudentResultDetailsResponse | null>(null)
+  const [setting, setSetting] = useState<SchoolSetting | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
 
@@ -59,6 +65,25 @@ export default function ManagerStudentResultDetailsPage() {
     setExamPeriodId(query.get("exam_period_id") ?? "")
     setClassId(query.get("class_id") ?? "")
   }, [])
+
+  useEffect(() => {
+    const loadSetting = async () => {
+      try {
+        const res = await fetch(`${apiBase}/api/manager/settings`, { cache: "no-store" })
+        if (!res.ok) {
+          setSetting(null)
+          return
+        }
+
+        const json = (await res.json()) as { data?: SchoolSetting | null }
+        setSetting((json?.data ?? null) as SchoolSetting | null)
+      } catch {
+        setSetting(null)
+      }
+    }
+
+    void loadSetting()
+  }, [apiBase])
 
   useEffect(() => {
     const loadDetails = async () => {
@@ -113,10 +138,12 @@ export default function ManagerStudentResultDetailsPage() {
   const subjects = details?.subjects ?? []
   const student = details?.student ?? null
   const summary = details?.summary ?? null
+  const schoolName = setting?.school_name?.trim() || "school_name:مدرسة"
+  const schoolLogo = setting?.school_logo_url ?? null
 
   return (
-    <div className="flex flex-1 flex-col">
-      <div className="@container/main flex flex-1 flex-col gap-2">
+    <div className="manager-result-page flex flex-1 flex-col">
+      <div className="manager-result-screen @container/main flex flex-1 flex-col gap-2">
         <div className="flex flex-col gap-4 py-4 md:gap-6 md:py-6">
           <div className="px-4 lg:px-6">
             <div className="rounded-2xl border border-slate-100 bg-white p-5 shadow-sm">
@@ -125,12 +152,21 @@ export default function ManagerStudentResultDetailsPage() {
                   <h1 className="text-base font-semibold">تفاصيل نتيجة الطالب</h1>
                   <p className="text-xs text-slate-500">عرض تفصيلي لدرجات المواد خلال الفترة المحددة.</p>
                 </div>
-                <Link
-                  href={backHref}
-                  className="inline-flex items-center justify-center rounded-md border border-slate-200 bg-white px-3 py-1.5 text-xs font-semibold text-slate-700 transition hover:bg-slate-50"
-                >
-                  العودة إلى النتائج
-                </Link>
+                <div className="flex items-center gap-2">
+                  <button
+                    type="button"
+                    onClick={() => window.print()}
+                    className="inline-flex items-center justify-center rounded-md bg-[var(--color-sidebar-bg)] px-3 py-1.5 text-xs font-semibold text-white transition hover:opacity-90"
+                  >
+                    طباعة النتيجة
+                  </button>
+                  <Link
+                    href={backHref}
+                    className="inline-flex items-center justify-center rounded-md border border-slate-200 bg-white px-3 py-1.5 text-xs font-semibold text-slate-700 transition hover:bg-slate-50"
+                  >
+                    العودة إلى النتائج
+                  </Link>
+                </div>
               </div>
 
               {loading ? <div className="text-sm text-slate-500">جارٍ تحميل التفاصيل...</div> : null}
@@ -211,6 +247,214 @@ export default function ManagerStudentResultDetailsPage() {
           </div>
         </div>
       </div>
+
+      <div className="manager-print-sheet" dir="rtl">
+        <div className="sheet-inner">
+          <div className="sheet-header">
+            <div className="sheet-logo">
+              {schoolLogo ? (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img src={schoolLogo} alt={schoolName} />
+              ) : (
+                <span>LOGO</span>
+              )}
+            </div>
+            <div className="sheet-title-wrap">
+              <h2>{schoolName}</h2>
+              <div className="sheet-exam-title">نتيجة {student?.exam_name ?? "exam_name"}</div>
+            </div>
+          </div>
+
+          <div className="sheet-meta-row">
+            <div>الاسم: {student?.full_name ?? "student_name"}</div>
+            <div>الصف: {student?.class_name ?? "class_name"}</div>
+          </div>
+
+          <div className="sheet-table-wrap">
+            <table className="sheet-table">
+              <tbody>
+                <tr>
+                  <th>المواد</th>
+                  {subjects.map((subject) => (
+                    <th key={`subject-name-${subject.subject_id}`}>{subject.subject_name ?? "-"}</th>
+                  ))}
+                  <th>المجموع</th>
+                  <th>النسبة</th>
+                </tr>
+                <tr>
+                  <th>الدرجة الكاملة</th>
+                  {subjects.map((subject) => (
+                    <td key={`subject-full-${subject.subject_id}`}>{subject.total_degree}</td>
+                  ))}
+                  <td>{summary?.max_total ?? "-"}</td>
+                  <td>100%</td>
+                </tr>
+                <tr>
+                  <th>الدرجة المتحصلة</th>
+                  {subjects.map((subject) => (
+                    <td key={`subject-earned-${subject.subject_id}`}>{subject.degree}</td>
+                  ))}
+                  <td>{summary?.earned_total ?? "-"}</td>
+                  <td>{summary ? `${summary.percentage}%` : "-"}</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+
+          <div className="sheet-footer">
+            <div className="sheet-signatures">
+              <div>المدير: ............</div>
+              <div>توقيع المدير: ............</div>
+            </div>
+            <div className="sheet-motto">عود ابنك/ابنتك الصلاة و الصدق و الحب الوطن</div>
+          </div>
+        </div>
+      </div>
+
+      <style jsx>{`
+        .manager-print-sheet {
+          display: none;
+        }
+
+        .sheet-inner {
+          background: #f1f1f1;
+          border: 10px solid #535353;
+          color: #000;
+          min-height: 664px;
+          padding: 28px 44px 24px;
+          box-sizing: border-box;
+        }
+
+        .sheet-header {
+          display: flex;
+          flex-direction: row-reverse;
+          align-items: flex-start;
+          justify-content: space-between;
+          gap: 20px;
+        }
+
+        .sheet-title-wrap {
+          flex: 1;
+          text-align: center;
+          padding-top: 6px;
+        }
+
+        .sheet-title-wrap h2 {
+          margin: 0;
+          font-size: 50px;
+          font-weight: 600;
+          line-height: 1.2;
+        }
+
+        .sheet-exam-title {
+          margin-top: 8px;
+          font-size: 32px;
+          font-weight: 600;
+        }
+
+        .sheet-logo {
+          width: 137px;
+          height: 137px;
+          border-radius: 9999px;
+          overflow: hidden;
+          background: #d8d8d8;
+          border: 2px solid #b9b9b9;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          font-size: 14px;
+          color: #666;
+          flex-shrink: 0;
+        }
+
+        .sheet-logo img {
+          width: 100%;
+          height: 100%;
+          object-fit: cover;
+        }
+
+        .sheet-meta-row {
+          margin-top: 26px;
+          display: flex;
+          align-items: center;
+          justify-content: space-between;
+          gap: 24px;
+          font-size: 32px;
+          font-weight: 400;
+        }
+
+        .sheet-table-wrap {
+          margin-top: 18px;
+        }
+
+        .sheet-table {
+          width: 100%;
+          border-collapse: collapse;
+          table-layout: auto;
+          direction: rtl;
+          font-size: 20px;
+        }
+
+        .sheet-table th,
+        .sheet-table td {
+          border: 1px solid #d8d8d8;
+          background: #fbfbfb;
+          padding: 14px 10px;
+          text-align: center;
+          vertical-align: middle;
+          min-width: 96px;
+        }
+
+        .sheet-table th:first-child,
+        .sheet-table td:first-child {
+          min-width: 180px;
+          font-size: 26px;
+        }
+
+        .sheet-footer {
+          margin-top: 28px;
+          display: flex;
+          align-items: flex-end;
+          justify-content: space-between;
+          gap: 20px;
+          color: #4e4e4e;
+        }
+
+        .sheet-signatures {
+          display: flex;
+          flex-direction: column;
+          gap: 10px;
+          font-size: 32px;
+          font-weight: 400;
+          white-space: nowrap;
+        }
+
+        .sheet-motto {
+          font-size: 32px;
+          font-weight: 400;
+          text-align: right;
+        }
+
+        @media print {
+          :global(aside),
+          :global(header) {
+            display: none !important;
+          }
+
+          .manager-result-screen {
+            display: none !important;
+          }
+
+          .manager-print-sheet {
+            display: block !important;
+          }
+
+          .sheet-inner {
+            break-inside: avoid;
+            page-break-inside: avoid;
+          }
+        }
+      `}</style>
     </div>
   )
 }
