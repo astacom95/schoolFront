@@ -272,33 +272,29 @@ export default function ManagerStudentResultDetailsPage() {
 
           <div className="sheet-table-wrap">
             <table className="sheet-table">
-              <tbody>
+              <thead>
                 <tr>
                   <th>المواد</th>
-                  {subjects.map((subject) => (
-                    <th key={`subject-name-${subject.subject_id}`}>{subject.subject_name ?? "-"}</th>
-                  ))}
-                  <th>المجموع</th>
-                  <th>النسبة</th>
-                </tr>
-                <tr>
-                  <th>الدرجة الكاملة</th>
-                  {subjects.map((subject) => (
-                    <td key={`subject-full-${subject.subject_id}`}>{subject.total_degree}</td>
-                  ))}
-                  <td>{summary?.max_total ?? "-"}</td>
-                  <td>100%</td>
-                </tr>
-                <tr>
                   <th>الدرجة المتحصلة</th>
-                  {subjects.map((subject) => (
-                    <td key={`subject-earned-${subject.subject_id}`}>{subject.degree}</td>
-                  ))}
-                  <td>{summary?.earned_total ?? "-"}</td>
-                  <td>{summary ? `${summary.percentage}%` : "-"}</td>
+                  <th>الدرجة الكاملة</th>
                 </tr>
+              </thead>
+              <tbody>
+                {subjects.map((subject) => (
+                  <tr key={`subject-row-${subject.subject_id}`}>
+                    <td>{subject.subject_name ?? "-"}</td>
+                    <td>{subject.degree}</td>
+                    <td>{subject.total_degree}</td>
+                  </tr>
+                ))}
               </tbody>
             </table>
+            <div className="sheet-summary-row">
+              <div>
+                المجموع: {summary?.earned_total ?? "-"} / {summary?.max_total ?? "-"}
+              </div>
+              <div>النسبة: {summary ? `${summary.percentage}%` : "-"}</div>
+            </div>
           </div>
 
           <div className="sheet-footer">
@@ -390,9 +386,14 @@ export default function ManagerStudentResultDetailsPage() {
         .sheet-table {
           width: 100%;
           border-collapse: collapse;
-          table-layout: auto;
+          table-layout: fixed;
           direction: rtl;
           font-size: 20px;
+        }
+
+        .sheet-table thead th {
+          background: #e8e8e8;
+          font-weight: 700;
         }
 
         .sheet-table th,
@@ -402,13 +403,23 @@ export default function ManagerStudentResultDetailsPage() {
           padding: 14px 10px;
           text-align: center;
           vertical-align: middle;
-          min-width: 96px;
         }
 
         .sheet-table th:first-child,
         .sheet-table td:first-child {
-          min-width: 180px;
-          font-size: 26px;
+          width: 50%;
+          font-size: 24px;
+        }
+
+        .sheet-summary-row {
+          margin-top: 10px;
+          display: flex;
+          align-items: center;
+          justify-content: space-between;
+          gap: 16px;
+          font-size: 24px;
+          font-weight: 600;
+          color: #222;
         }
 
         .sheet-footer {
@@ -442,7 +453,7 @@ export default function ManagerStudentResultDetailsPage() {
 
           :global([data-sidebar="sidebar"]),
           :global([data-sidebar="header"]),
-          :global(.group\\/sidebar-wrapper),
+          :global([class*="group/sidebar-wrapper"]),
           :global(.peer),
           :global([data-slot="sidebar-inset"]),
           :global(header) {
