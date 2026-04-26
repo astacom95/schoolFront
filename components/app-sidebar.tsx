@@ -81,6 +81,11 @@ const data = {
       icon: LayersIcon,
     },
     {
+      title: "دروس اليوم",
+      url: "/manager/today-lessons",
+      icon: BookOpenIcon,
+    },
+    {
       title: "تدريبات",
       url: "/manager/quizzes",
       icon: ListChecksIcon,
