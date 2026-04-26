@@ -436,9 +436,26 @@ export default function ManagerStudentResultDetailsPage() {
         }
 
         @media print {
-          :global(aside),
+          @page {
+            margin: 0;
+          }
+
+          :global([data-sidebar="sidebar"]),
+          :global([data-sidebar="header"]),
+          :global(.group\\/sidebar-wrapper),
+          :global(.peer),
+          :global([data-slot="sidebar-inset"]),
           :global(header) {
             display: none !important;
+            visibility: hidden !important;
+          }
+
+          :global(body),
+          :global(main) {
+            margin: 0 !important;
+            padding: 0 !important;
+            overflow: visible !important;
+            background: #fff !important;
           }
 
           .manager-result-screen {
@@ -447,9 +464,15 @@ export default function ManagerStudentResultDetailsPage() {
 
           .manager-print-sheet {
             display: block !important;
+            width: 100% !important;
+            overflow: visible !important;
+            break-inside: avoid;
+            page-break-inside: avoid;
           }
 
           .sheet-inner {
+            width: 100% !important;
+            margin: 0 !important;
             break-inside: avoid;
             page-break-inside: avoid;
           }
